@@ -2,98 +2,49 @@
   MTec Estoque - Sistema de Controle de Estoque
 ═══════════════════════════════════════════════════════════════
 
-COMO USAR O APLICATIVO
+COMO USAR (SEM SCRIPTS)
 ═══════════════════════════════════════════════════════════════
 
-OPÇÃO 1: USO NORMAL (RECOMENDADO)
+FORMA MAIS SIMPLES
 ───────────────────────────────────────────────────────────────
 
-1. Dê duplo clique no arquivo:
-   📄 INICIAR_APLICATIVO.bat
+Abra o navegador e acesse:
 
-2. Aguarde alguns segundos enquanto o aplicativo inicia
+  https://mtec-estoque-1-0-production.up.railway.app
 
-3. O navegador abrirá automaticamente com o aplicativo
-
-4. Use o aplicativo normalmente!
+Pronto. Nao precisa instalar nada nem rodar nenhum arquivo.
 
 
-OPÇÃO 2: MODO DESENVOLVIMENTO
+RODAR NO SEU PC (COMANDOS NO TERMINAL)
 ───────────────────────────────────────────────────────────────
 
-1. Dê duplo clique no arquivo:
-   📄 INICIAR_DESENVOLVIMENTO.bat
+1. Abra PowerShell ou CMD na pasta do projeto
 
-2. Use quando quiser testar mudanças no código
+2. Instale as dependencias (uma vez):
+   pnpm install
+
+3. Compile o servidor (uma vez):
+   pnpm build
+
+4. Inicie o servidor:
+   pnpm start
+
+5. Abra o navegador em: http://localhost:3000
 
 
-REQUISITOS
+REQUISITOS (só se for rodar no PC)
 ═══════════════════════════════════════════════════════════════
 
-- Windows 10 ou superior
-- Node.js instalado (baixe em: https://nodejs.org)
-  Escolha a versão LTS (Long Term Support)
-
-O aplicativo instalará automaticamente:
-- pnpm (gerenciador de pacotes)
-- Todas as dependências necessárias
+- Node.js (https://nodejs.org) - versao LTS
+- pnpm (instalado com: npm install -g pnpm)
 
 
-PRIMEIRA VEZ
+MAIS DETALHES
 ═══════════════════════════════════════════════════════════════
 
-Na primeira execução, o aplicativo irá:
-✓ Instalar pnpm (se necessário)
-✓ Instalar todas as dependências
-✓ Compilar o servidor
-✓ Configurar o banco de dados
-
-Isso pode levar alguns minutos. Nas próximas vezes será muito mais rápido!
-
-
-COMO FECHAR
-═══════════════════════════════════════════════════════════════
-
-- Feche a janela do navegador
-- Feche a janela do terminal (ou pressione Ctrl+C)
-
-
-PROBLEMAS?
-═══════════════════════════════════════════════════════════════
-
-Se o aplicativo não iniciar:
-
-1. Verifique se o Node.js está instalado:
-   - Abra o Prompt de Comando
-   - Digite: node --version
-   - Se não aparecer uma versão, instale o Node.js
-
-2. Verifique se a porta 3000 está livre:
-   - Feche outros aplicativos que possam estar usando a porta
-
-3. Execute como Administrador:
-   - Clique com botão direito no arquivo .bat
-   - Selecione "Executar como administrador"
-
-
-LOCALIZAÇÃO DOS DADOS
-═══════════════════════════════════════════════════════════════
-
-O banco de dados está localizado em:
-%APPDATA%\MTec Estoque\database
-
-Para fazer backup, copie esta pasta.
-
-
-SUPORTE
-═══════════════════════════════════════════════════════════════
-
-Para mais informações, consulte:
-- GUIA_USO.md
-- GUIA_DESKTOP_WINDOWS.md
+Consulte o arquivo COMO_USAR.md
 
 
 ═══════════════════════════════════════════════════════════════
-Versão: 1.0.0
-Desenvolvido por: MTec Energia
+Versao: 1.0.0
 ═══════════════════════════════════════════════════════════════
