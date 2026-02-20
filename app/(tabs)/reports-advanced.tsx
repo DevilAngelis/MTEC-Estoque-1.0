@@ -15,6 +15,7 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Print from "expo-print";
+// @ts-ignore - Legacy API for compatibility
 import * as FileSystem from "expo-file-system/legacy";
 
 export default function ReportsAdvancedScreen() {
