@@ -14,9 +14,11 @@ RUN pnpm install --frozen-lockfile
 # Copiar resto do projeto
 COPY . .
 
-# Build (se for Next.js)
+# Build do servidor
 RUN pnpm build
 
+# Expor porta (Railway define PORT automaticamente)
 EXPOSE 3000
 
+# Iniciar servidor em produção
 CMD ["pnpm", "start"]
