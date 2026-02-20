@@ -26,8 +26,13 @@ async function startServer() {
   const port = await findAvailablePort(serverPort);
   serverPort = port;
 
-  // Importar e iniciar o servidor compilado
+  // Verificar se dist/index.js existe
   const serverPath = path.join(__dirname, '..', 'dist', 'index.js');
+  const fs = require('fs');
+  
+  if (!fs.existsSync(serverPath)) {
+    throw new Error('Servidor não compilado! Execute: pnpm build');
+  }
   
   // Definir variáveis de ambiente
   process.env.PORT = port.toString();
@@ -37,19 +42,29 @@ async function startServer() {
   serverProcess = spawn('node', [serverPath], {
     env: { ...process.env, PORT: port.toString(), NODE_ENV: 'production' },
     cwd: path.join(__dirname, '..'),
-    stdio: 'pipe'
+    stdio: ['ignore', 'pipe', 'pipe']
   });
 
+  let serverOutput = '';
+  let serverError = '';
+
   serverProcess.stdout.on('data', (data) => {
-    console.log(`[Server] ${data}`);
+    const output = data.toString();
+    serverOutput += output;
+    console.log(`[Server] ${output.trim()}`);
   });
 
   serverProcess.stderr.on('data', (data) => {
-    console.error(`[Server Error] ${data}`);
+    const error = data.toString();
+    serverError += error;
+    console.error(`[Server Error] ${error.trim()}`);
   });
 
   serverProcess.on('close', (code) => {
-    console.log(`[Server] Processo encerrado com código ${code}`);
+    if (code !== 0 && code !== null) {
+      console.error(`[Server] Processo encerrado com código ${code}`);
+      console.error(`[Server] Erros: ${serverError}`);
+    }
   });
 
   // Aguardar servidor iniciar (máximo 30 segundos)
@@ -59,7 +74,7 @@ async function startServer() {
     
     const checkServer = setInterval(() => {
       attempts++;
-      const req = http.get(`http://localhost:${port}/api/health`, (res) => {
+      const req = http.get(`http://localhost:${port}/api/health`, { timeout: 1000 }, (res) => {
         if (res.statusCode === 200) {
           clearInterval(checkServer);
           resolve();
@@ -68,10 +83,12 @@ async function startServer() {
       req.on('error', () => {
         if (attempts >= maxAttempts) {
           clearInterval(checkServer);
-          reject(new Error('Servidor não iniciou a tempo'));
+          reject(new Error(`Servidor não iniciou. Últimos erros:\n${serverError}`));
         }
       });
-      req.setTimeout(1000);
+      req.on('timeout', () => {
+        req.destroy();
+      });
     }, 500);
   });
 
@@ -101,12 +118,20 @@ function createWindow() {
     mainWindow.loadURL(url);
     mainWindow.show();
 
-    // Abrir DevTools em desenvolvimento (remover em produção)
+    // Abrir DevTools em desenvolvimento
     if (process.env.NODE_ENV === 'development') {
       mainWindow.webContents.openDevTools();
     }
   }).catch((error) => {
     console.error('[Electron] Erro ao iniciar servidor:', error);
+    
+    // Mostrar diálogo de erro ao usuário
+    const { dialog } = require('electron');
+    dialog.showErrorBox(
+      'Erro ao Iniciar Aplicativo',
+      `Não foi possível iniciar o servidor.\n\n${error.message}\n\nCertifique-se de que:\n1. Executeu: pnpm install\n2. Executeu: pnpm build\n3. O banco de dados está configurado`
+    );
+    
     app.quit();
   });
 
