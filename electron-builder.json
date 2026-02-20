@@ -1,0 +1,46 @@
+{
+  "appId": "com.mtec.estoque",
+  "productName": "MTec Estoque",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json",
+    "node_modules/**/*",
+    "!node_modules/.cache",
+    "!node_modules/electron/**/*"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "ia32"]
+      }
+    ],
+    "icon": "assets/images/icon.ico",
+    "publisherName": "MTec Energia"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "MTec Estoque",
+    "installerIcon": "assets/images/icon.ico",
+    "uninstallerIcon": "assets/images/icon.ico",
+    "installerHeaderIcon": "assets/images/icon.ico",
+    "deleteAppDataOnUninstall": false
+  },
+  "mac": {
+    "target": "dmg",
+    "icon": "assets/images/icon.icns",
+    "category": "public.app-category.business"
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "assets/images/icon.png",
+    "category": "Office"
+  }
+}
