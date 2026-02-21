@@ -21,8 +21,9 @@ export default function MaterialsScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    code: "",
     description: "",
-    categoryId: 1,
+    categoryId: undefined as number | undefined,
     quantity: "0",
     unit: "un",
     unitPrice: "0.00",
@@ -31,6 +32,7 @@ export default function MaterialsScreen() {
 
   const materialsQuery = trpc.materials.list.useQuery();
   const categoriesQuery = trpc.categories.list.useQuery();
+  const categories = categoriesQuery.data ?? [];
   const movementsQuery = trpc.movements.list.useQuery();
   const createMutation = trpc.materials.create.useMutation();
   const deleteMutation = trpc.materials.delete.useMutation();
@@ -56,6 +58,7 @@ export default function MaterialsScreen() {
     try {
       await createMutation.mutateAsync({
         name: formData.name,
+        code: formData.code || undefined,
         description: formData.description,
         categoryId: formData.categoryId,
         quantity: parseInt(formData.quantity) || 0,
@@ -67,8 +70,9 @@ export default function MaterialsScreen() {
       setShowAddModal(false);
       setFormData({
         name: "",
+        code: "",
         description: "",
-        categoryId: 1,
+        categoryId: undefined,
         quantity: "0",
         unit: "un",
         unitPrice: "0.00",
@@ -213,16 +217,61 @@ export default function MaterialsScreen() {
             <View className="bg-background rounded-t-2xl p-6 pb-12">
               <Text className="text-xl font-bold text-foreground mb-6">Novo Material</Text>
 
-              <Text className="text-xs font-semibold text-muted mb-1">Nome do Material *</Text>
-              <TextInput
-                placeholder="Ex: Parafuso M8"
-                placeholderTextColor={colors.muted}
-                value={formData.name}
-                onChangeText={(text) => setFormData({ ...formData, name: text })}
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground mb-4"
-              />
+              <View className="flex-row gap-4 mb-4">
+                <View className="flex-1">
+                  <Text className="text-xs font-semibold text-muted mb-1">Nome *</Text>
+                  <TextInput
+                    placeholder="Nome do material"
+                    placeholderTextColor={colors.muted}
+                    value={formData.name}
+                    onChangeText={(text) => setFormData({ ...formData, name: text })}
+                    className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs font-semibold text-muted mb-1">Código *</Text>
+                  <TextInput
+                    placeholder="Código"
+                    placeholderTextColor={colors.muted}
+                    value={formData.code}
+                    onChangeText={(text) => setFormData({ ...formData, code: text })}
+                    className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
+                  />
+                </View>
+              </View>
 
-              <Text className="text-xs font-semibold text-muted mb-1">Descrição do Produto</Text>
+              {categories.length > 0 && (
+                <>
+                  <Text className="text-xs font-semibold text-muted mb-1">Categoria (opcional)</Text>
+                  <ScrollView horizontal className="mb-4" showsHorizontalScrollIndicator={false}>
+                    <TouchableOpacity
+                      onPress={() => setFormData({ ...formData, categoryId: undefined })}
+                      className={`mr-2 px-4 py-2 rounded-lg border ${
+                        !formData.categoryId ? "bg-[#00FF00] border-[#00FF00]" : "bg-surface border-border"
+                      }`}
+                    >
+                      <Text className={!formData.categoryId ? "text-black font-semibold" : "text-foreground"}>
+                        Nenhuma
+                      </Text>
+                    </TouchableOpacity>
+                    {categories.map((c) => (
+                      <TouchableOpacity
+                        key={c.id}
+                        onPress={() => setFormData({ ...formData, categoryId: c.id })}
+                        className={`mr-2 px-4 py-2 rounded-lg border ${
+                          formData.categoryId === c.id ? "bg-[#00FF00] border-[#00FF00]" : "bg-surface border-border"
+                        }`}
+                      >
+                        <Text className={formData.categoryId === c.id ? "text-black font-semibold" : "text-foreground"}>
+                          {c.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </>
+              )}
+
+              <Text className="text-xs font-semibold text-muted mb-1">Descrição</Text>
               <TextInput
                 placeholder="Ex: Parafuso de aço inoxidável"
                 placeholderTextColor={colors.muted}

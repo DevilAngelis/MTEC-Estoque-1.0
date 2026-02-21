@@ -1,0 +1,26 @@
+---
+description: Sempre atualizar o Git ao final das instruções
+alwaysApply: true
+---
+
+# Git - Atualização ao Final
+
+Ao concluir tarefas ou alterações no projeto:
+
+1. **Adicionar arquivos alterados**: `git add -A` (ou arquivos específicos)
+2. **Fazer commit**: `git commit -m "mensagem descritiva"`
+3. **Se houver remote**: `git push` (quando apropriado)
+
+## Quando aplicar
+
+- Após implementar features
+- Após corrigir bugs
+- Após refatorações
+- Ao final de qualquer conjunto de alterações no código
+
+## Mensagem de commit
+
+Use mensagens claras em português, por exemplo:
+- `feat: adiciona tela de login`
+- `fix: corrige erro na listagem de materiais`
+- `refactor: remove scripts desnecessários`

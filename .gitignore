@@ -7,6 +7,8 @@ node_modules/
 .expo/
 dist/
 web-build/
+build/
+release/
 expo-env.d.ts
 
 # Native
@@ -52,6 +54,7 @@ app-example
 # Logs
 logs
 *.log
+debug-*.log
 
 # OS
 Thumbs.db

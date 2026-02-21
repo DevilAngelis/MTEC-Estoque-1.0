@@ -8,9 +8,11 @@ import {
   Alert,
   TextInput,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/hooks/use-auth";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -23,6 +25,8 @@ interface Settings {
 export default function SettingsScreen() {
   const colors = useColors();
   const colorScheme = useColorScheme();
+  const { logout } = useAuth();
+  const router = useRouter();
   const [settings, setSettings] = useState<Settings>({
     darkMode: colorScheme === "dark",
     defaultUnit: "un",
@@ -164,6 +168,20 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             </View>
+          </View>
+
+          {/* Logout */}
+          <View className="mb-6">
+            <Text className="text-sm font-semibold text-foreground mb-4">Conta</Text>
+            <TouchableOpacity
+              onPress={async () => {
+                await logout();
+                router.replace("/login");
+              }}
+              className="bg-[#00FF00] rounded-lg p-4 active:opacity-80"
+            >
+              <Text className="text-black font-semibold text-center">Sair da conta</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Danger Zone */}

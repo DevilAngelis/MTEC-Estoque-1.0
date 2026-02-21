@@ -42,8 +42,8 @@ Este guia explica como instalar e usar o aplicativo MTec Estoque na versão desk
 - Digite "MTec Estoque"
 - Clique no aplicativo
 
-**Método 3: Script de Inicialização**
-- Duplo clique em `start-windows.bat` (se estiver usando a versão de desenvolvimento)
+**Método 3: Desenvolvimento**
+- Execute `pnpm build && pnpm electron:dev` no terminal (para desenvolvedores)
 
 ### Interface do Aplicativo
 

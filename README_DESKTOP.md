@@ -44,15 +44,11 @@ pnpm build:electron
 
 O executável será gerado em: `release/MTec Estoque Setup.exe`
 
-### Script de Inicialização Rápida (Windows)
+### Iniciar em Desenvolvimento
 
-Duplo clique em: `scripts/start-windows.bat`
-
-Este script:
-- Verifica se Node.js está instalado
-- Instala dependências se necessário
-- Compila o servidor se necessário
-- Inicia o aplicativo
+```bash
+pnpm build && pnpm electron:dev
+```
 
 ## 📁 Estrutura de Arquivos
 
@@ -60,8 +56,6 @@ Este script:
 ├── electron/
 │   ├── main.js          # Processo principal do Electron
 │   └── preload.js       # Script de pré-carregamento
-├── scripts/
-│   └── start-windows.bat # Script de inicialização para Windows
 ├── electron-builder.json # Configuração do build
 └── package.json         # Scripts e dependências
 ```

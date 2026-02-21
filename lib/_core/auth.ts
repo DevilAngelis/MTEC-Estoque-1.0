@@ -4,7 +4,7 @@ import { SESSION_TOKEN_KEY, USER_INFO_KEY } from "@/constants/oauth";
 
 export type User = {
   id: number;
-  openId: string;
+  openId: string | null;
   name: string | null;
   email: string | null;
   loginMethod: string | null;

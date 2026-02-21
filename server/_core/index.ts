@@ -1,10 +1,17 @@
 import express from "express";
+import path from "path";
 import { createServer } from "http";
 import net from "net";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { getSessionCookieOptions } from "./cookies";
+import { COOKIE_NAME } from "../../shared/const.js";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -55,8 +62,44 @@ async function startServer() {
 
   registerOAuthRoutes(app);
 
-  // Root route - serve welcome page
-  app.get("/", (_req, res) => {
+  app.get("/api/health", (_req, res) => {
+    res.json({ ok: true, timestamp: Date.now(), message: "API MTec Estoque está operacional" });
+  });
+
+  // REST endpoints for auth (used by useAuth)
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const ctx = await createContext({ req, res } as any);
+      res.json({ user: ctx.user });
+    } catch {
+      res.json({ user: null });
+    }
+  });
+  app.post("/api/auth/logout", (req, res) => {
+    const cookieOptions = getSessionCookieOptions(req);
+    res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+    res.json({ success: true });
+  });
+
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext,
+    }),
+  );
+
+  // Serve static web app (Expo export) when dist exists - must be after API routes
+  const webBuildPath = path.join(__dirname, "..", "..", "dist");
+  const fs = await import("fs");
+  if (fs.existsSync(webBuildPath)) {
+    app.use(express.static(webBuildPath));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(webBuildPath, "index.html"));
+    });
+  } else {
+    // Root route - serve welcome page when no web build
+    app.get("/", (_req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     const html = `
       <!DOCTYPE html>
@@ -145,18 +188,7 @@ async function startServer() {
     `;
     res.send(html);
   });
-
-  app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, timestamp: Date.now(), message: "API MTec Estoque está operacional" });
-  });
-
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    }),
-  );
+  }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);

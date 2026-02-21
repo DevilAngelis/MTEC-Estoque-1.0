@@ -2,61 +2,103 @@ import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { createLocalSession, hashPassword, verifyPassword } from "./_core/localAuth";
 import * as db from "./db";
 import { generateReportData, generateCSV } from "./services/pdf";
 
 export const appRouter = router({
-  // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
+    register: publicProcedure
+      .input(z.object({
+        email: z.string().email("Email inválido"),
+        password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+        name: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const existing = await db.getUserByEmail(input.email);
+        if (existing) {
+          throw new Error("Email já cadastrado");
+        }
+        const passwordHash = await hashPassword(input.password);
+        const userId = await db.createUser({
+          email: input.email,
+          passwordHash,
+          name: input.name,
+        });
+        await createLocalSession(userId, input.email, ctx.res, ctx.req);
+        const user = await db.getUserById(userId);
+        return user!;
+      }),
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email("Email inválido"),
+        password: z.string().min(1, "Senha obrigatória"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserByEmail(input.email);
+        if (!user || !user.passwordHash) {
+          throw new Error("Email ou senha incorretos");
+        }
+        const valid = await verifyPassword(input.password, user.passwordHash);
+        if (!valid) {
+          throw new Error("Email ou senha incorretos");
+        }
+        await createLocalSession(user.id, user.email!, ctx.res, ctx.req);
+        return user;
+      }),
   }),
 
-  // ===== CATEGORIES =====
+  // ===== CATEGORIES (por usuário) =====
   categories: router({
-    list: publicProcedure.query(() => db.getAllCategories()),
-
-    create: publicProcedure
+    list: protectedProcedure.query(({ ctx }) => db.getAllCategories(ctx.user!.id)),
+    create: protectedProcedure
       .input(z.object({
         name: z.string().min(1, "Nome obrigatório").max(255),
         description: z.string().optional(),
       }))
-      .mutation(({ input }) => db.createCategory(input)),
-
-    delete: publicProcedure
+      .mutation(({ input, ctx }) =>
+        db.createCategory({ ...input, userId: ctx.user!.id })
+      ),
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ input }) => db.deleteCategory(input.id)),
+      .mutation(({ input, ctx }) => db.deleteCategory(input.id, ctx.user!.id)),
   }),
 
-  // ===== MATERIALS =====
+  // ===== MATERIALS (por usuário) =====
   materials: router({
-    list: publicProcedure.query(() => db.getAllMaterials()),
-
-    getById: publicProcedure
+    list: protectedProcedure.query(({ ctx }) => db.getAllMaterials(ctx.user!.id)),
+    getById: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(({ input }) => db.getMaterialById(input.id)),
-
-    create: publicProcedure
+      .query(({ input, ctx }) => db.getMaterialById(input.id, ctx.user!.id)),
+    create: protectedProcedure
       .input(z.object({
         name: z.string().min(1, "Nome obrigatório").max(255),
         description: z.string().optional(),
-        categoryId: z.number(),
+        categoryId: z.number().optional(),
+        code: z.string().optional(),
         quantity: z.number().default(0),
         unit: z.string().min(1, "Unidade obrigatória"),
         unitPrice: z.string().default("0.00"),
         minimumStock: z.number().default(0),
       }))
-      .mutation(({ input }) => db.createMaterial(input)),
-
-    update: publicProcedure
+      .mutation(({ input, ctx }) => {
+        const userId = ctx.user!.id;
+        const { categoryId, ...rest } = input;
+        return db.createMaterial({
+          ...rest,
+          userId,
+          categoryId: categoryId ?? undefined,
+        } as any);
+      }),
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().optional(),
@@ -67,81 +109,75 @@ export const appRouter = router({
         unitPrice: z.string().optional(),
         minimumStock: z.number().optional(),
       }))
-      .mutation(({ input }) => {
+      .mutation(({ input, ctx }) => {
         const { id, ...data } = input;
-        return db.updateMaterial(id, data);
+        return db.updateMaterial(id, data, ctx.user!.id);
       }),
-
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        const movements = await db.getMovementsByMaterial(input.id);
+      .mutation(async ({ input, ctx }) => {
+        const movements = await db.getMovementsByMaterial(input.id, ctx.user!.id);
         if (movements.length > 0) {
           throw new Error("Não é possível deletar um material com movimentações registradas");
         }
-        return db.deleteMaterial(input.id);
+        return db.deleteMaterial(input.id, ctx.user!.id);
       }),
   }),
 
-  // ===== REPORTS =====
+  // ===== REPORTS (por usuário) =====
   reports: router({
-    generatePDF: publicProcedure
+    generatePDF: protectedProcedure
       .input(z.object({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         materialId: z.number().optional(),
         type: z.enum(["entrada", "saida", "consolidado"]).optional(),
       }))
-      .query(async ({ input }) => {
-        const movements = await db.getAllMovements();
-        const materials = await db.getAllMaterials();
+      .query(async ({ input, ctx }) => {
+        const movements = await db.getAllMovements(ctx.user!.id);
+        const materials = await db.getAllMaterials(ctx.user!.id);
         return generateReportData(movements, materials, input);
       }),
-
-    exportCSV: publicProcedure
+    exportCSV: protectedProcedure
       .input(z.object({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         materialId: z.number().optional(),
         type: z.enum(["entrada", "saida", "consolidado"]).optional(),
       }))
-      .query(async ({ input }) => {
-        const movements = await db.getAllMovements();
-        const materials = await db.getAllMaterials();
+      .query(async ({ input, ctx }) => {
+        const movements = await db.getAllMovements(ctx.user!.id);
+        const materials = await db.getAllMaterials(ctx.user!.id);
         const data = generateReportData(movements, materials, input);
         return { csv: generateCSV(data) };
       }),
-
-    exportData: publicProcedure
-      .query(async () => {
-        const categories = await db.getAllCategories();
-        const materials = await db.getAllMaterials();
-        const movements = await db.getAllMovements();
-        return {
-          categories,
-          materials,
-          movements,
-          exportedAt: new Date(),
-        };
-      }),
+    exportData: protectedProcedure.query(async ({ ctx }) => {
+      const categories = await db.getAllCategories(ctx.user!.id);
+      const materials = await db.getAllMaterials(ctx.user!.id);
+      const movements = await db.getAllMovements(ctx.user!.id);
+      return {
+        categories,
+        materials,
+        movements,
+        exportedAt: new Date(),
+      };
+    }),
   }),
 
-  // ===== MOVEMENTS =====
+  // ===== MOVEMENTS (por usuário) =====
   movements: router({
-    list: publicProcedure.query(() => db.getAllMovements()),
-
-    getByDateRange: publicProcedure
-      .input(z.object({
-        startDate: z.date(),
-        endDate: z.date(),
-      }))
-      .query(({ input }) => db.getMovementsByDateRange(input.startDate, input.endDate)),
-
-    getByMaterial: publicProcedure
+    list: protectedProcedure.query(({ ctx }) => db.getAllMovements(ctx.user!.id)),
+    getByDateRange: protectedProcedure
+      .input(z.object({ startDate: z.date(), endDate: z.date() }))
+      .query(({ input, ctx }) =>
+        db.getMovementsByDateRange(input.startDate, input.endDate, ctx.user!.id)
+      ),
+    getByMaterial: protectedProcedure
       .input(z.object({ materialId: z.number() }))
-      .query(({ input }) => db.getMovementsByMaterial(input.materialId)),
-
-    create: publicProcedure
+      .query(({ input, ctx }) =>
+        db.getMovementsByMaterial(input.materialId, ctx.user!.id)
+      ),
+    create: protectedProcedure
       .input(z.object({
         materialId: z.number(),
         type: z.enum(["entrada", "saída"]),
@@ -150,41 +186,40 @@ export const appRouter = router({
         notes: z.string().optional(),
         movementDate: z.date().optional(),
       }))
-      .mutation(async ({ input }) => {
-        // Atualizar quantidade do material
-        const material = await db.getMaterialById(input.materialId);
+      .mutation(async ({ input, ctx }) => {
+        const userId = ctx.user!.id;
+        const material = await db.getMaterialById(input.materialId, userId);
         if (!material) throw new Error("Material não encontrado");
 
-        const newQuantity = input.type === "entrada"
-          ? material.quantity + input.quantity
-          : material.quantity - input.quantity;
+        const newQuantity =
+          input.type === "entrada"
+            ? material.quantity + input.quantity
+            : material.quantity - input.quantity;
 
         if (newQuantity < 0) {
           throw new Error("Quantidade insuficiente no estoque");
         }
 
-        await db.updateMaterial(input.materialId, { quantity: newQuantity });
-        return db.createMovement(input);
+        await db.updateMaterial(input.materialId, { quantity: newQuantity }, userId);
+        return db.createMovement({ ...input, userId });
       }),
-
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        const movement = await db.getMovementById(input.id);
-        
-        if (!movement) {
-          throw new Error("Movimentação não encontrada");
-        }
+      .mutation(async ({ input, ctx }) => {
+        const userId = ctx.user!.id;
+        const movement = await db.getMovementById(input.id, userId);
+        if (!movement) throw new Error("Movimentação não encontrada");
 
-        const material = await db.getMaterialById(movement.materialId);
+        const material = await db.getMaterialById(movement.materialId, userId);
         if (!material) throw new Error("Material não encontrado");
 
-        const reversedQuantity = movement.type === "entrada"
-          ? material.quantity - movement.quantity
-          : material.quantity + movement.quantity;
+        const reversedQuantity =
+          movement.type === "entrada"
+            ? material.quantity - movement.quantity
+            : material.quantity + movement.quantity;
 
-        await db.updateMaterial(movement.materialId, { quantity: reversedQuantity });
-        return db.deleteMovement(input.id);
+        await db.updateMaterial(movement.materialId, { quantity: reversedQuantity }, userId);
+        return db.deleteMovement(input.id, userId);
       }),
   }),
 });
