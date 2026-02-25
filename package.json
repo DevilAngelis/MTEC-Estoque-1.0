@@ -1,0 +1,66 @@
+{
+  "name": "mtec-estoque",
+  "version": "4.0.0",
+  "description": "MTec Estoque - Sistema de Controle de Estoque (Desktop + Android)",
+  "author": "MTec",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "build:web": "node copy-web.js",
+    "cap:sync": "npx cap sync android",
+    "cap:add:android": "npx cap add android",
+    "apk:debug": "npm run build:web && npm run cap:sync && cd android && (if exist gradlew.bat (gradlew.bat assembleDebug) else (./gradlew assembleDebug)) && cd ..",
+    "apk": "npm run apk:debug"
+  },
+  "build": {
+    "appId": "com.mtec.estoque",
+    "productName": "MTec Estoque",
+    "copyright": "Copyright © 2025 MTec",
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MTec Estoque",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": ["pt_BR"],
+      "language": "1046"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "MTec_Estoque_Supabase.html"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "DevilAngelis",
+        "repo": "MTEC-Update"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "electron-updater": "^6.1.8"
+  }
+}

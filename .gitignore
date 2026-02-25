@@ -1,0 +1,17 @@
+# Dependências
+node_modules/
+
+# Builds Electron
+dist/
+build/
+
+# Executáveis
+*.exe
+*.msi
+
+# Logs
+*.log
+
+# Ambiente
+.env
+.env.local

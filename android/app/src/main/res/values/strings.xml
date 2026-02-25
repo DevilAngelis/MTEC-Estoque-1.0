@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MTec Estoque</string>
+    <string name="title_activity_main">MTec Estoque</string>
+    <string name="package_name">com.mtec.estoque</string>
+    <string name="custom_url_scheme">com.mtec.estoque</string>
+</resources>

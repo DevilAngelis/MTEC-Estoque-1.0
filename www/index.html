@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTEC Estoque</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root{--green:#00ff41;--gdim:#00cc33;--gg:rgba(0,255,65,0.15);--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--card:#161616;--bd:#2a2a2a;--tx:#e8e8e8;--mt:#777;--red:#ff4444;--or:#ff8c00;--bl:#00aaff;--pu:#a855f7}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.5;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* LOADING */
+#ls{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .15s}
+#ls.hide{opacity:0;pointer-events:none}
+.ll{font-size:26px;font-weight:800;color:var(--green)}
+.lbw{width:180px;height:3px;background:var(--bd);border-radius:4px;overflow:hidden}
+.lb{height:100%;background:var(--green);animation:la 1.4s ease-in-out infinite}
+@keyframes la{0%{width:0}60%{width:80%}100%{width:100%}}
+.lt{color:var(--mt);font-size:12px}
+
+/* LOGIN */
+#login{display:none;position:fixed;inset:0;background:var(--bg);z-index:8000;align-items:center;justify-content:center;padding:20px}
+#login.show{display:flex}
+.lbox{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.llogo{text-align:center;margin-bottom:28px}
+.llogo .icon{font-size:38px;display:block;margin-bottom:8px}
+.llogo h1{font-size:20px;font-weight:800;color:var(--green)}
+.llogo p{font-size:12px;color:var(--mt);margin-top:3px}
+.ltabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:22px}
+.ltab{flex:1;padding:8px;text-align:center;cursor:pointer;border-radius:6px;font-size:13px;font-weight:600;color:var(--mt);transition:all .2s;border:none;background:none;font-family:inherit}
+.ltab.on{background:var(--card);color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.lform{display:flex;flex-direction:column;gap:12px}
+.lform input{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:11px 14px;color:var(--tx);font-family:inherit;font-size:14px;width:100%;transition:border-color .2s}
+.lform input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--gg)}
+.lform input::placeholder{color:var(--mt)}
+.lbtn{background:var(--green);color:#000;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:14px;cursor:pointer;width:100%;transition:all .2s;margin-top:4px;font-family:inherit}
+.lbtn:hover{background:var(--gdim);box-shadow:0 4px 14px var(--gg)}
+.lbtn:disabled{opacity:.45;cursor:not-allowed}
+.lerr{color:var(--red);font-size:12px;text-align:center;padding:8px;background:rgba(255,68,68,.1);border-radius:6px;border:1px solid rgba(255,68,68,.25)}
+
+/* HEADER */
+.hdr{background:var(--green);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,255,65,.35)}
+.htitle{font-size:18px;font-weight:800;color:#000}
+.hsub{font-size:11px;color:#1a3a00;font-weight:600}
+.hright{display:flex;gap:8px;align-items:center}
+.ubadge{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.15);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:#000}
+.rtag{background:rgba(0,0,0,.2);padding:2px 7px;border-radius:10px;font-size:10px}
+.hbtn{background:rgba(0,0,0,.15);color:#000;border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.hbtn:hover{background:rgba(0,0,0,.28)}
+
+/* NAV */
+.nav{background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{padding:13px 18px;background:none;border:none;color:var(--mt);cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;white-space:nowrap;transition:all .2s;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px}
+.nb:hover{color:var(--tx)}
+.nb.on{color:var(--green);border-bottom-color:var(--green)}
+
+/* MAIN */
+.main{padding:20px;max-width:1200px;margin:0 auto}
+.page{display:none}
+.page.on{display:block;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* GRID */
+.g{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:20px;transition:border-color .2s}
+.card:hover{border-color:#333}
+.glow{border-color:var(--green) !important;box-shadow:0 0 20px var(--gg)}
+.mc{display:flex;flex-direction:column;gap:6px}
+.ml{font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.8px}
+.mv{font-size:30px;font-weight:800;letter-spacing:-1px}
+.mv.g{color:var(--green)}.mv.r{color:var(--red)}.mv.o{color:var(--or)}
+.ms{font-size:12px;color:var(--mt)}
+
+/* SECTION TITLE */
+.st{font-size:15px;font-weight:700;color:var(--green);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.st::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--bd),transparent)}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 12px;background:var(--bg3);color:var(--mt);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--bd)}
+td{padding:11px 12px;border-bottom:1px solid #1c1c1c;vertical-align:middle}
+tr:hover td{background:var(--bg3)}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.tok{background:rgba(0,255,65,.1);color:var(--green);border:1px solid rgba(0,255,65,.25)}
+.tlo{background:rgba(255,140,0,.1);color:var(--or);border:1px solid rgba(255,140,0,.25)}
+.tout{background:rgba(255,68,68,.1);color:var(--red);border:1px solid rgba(255,68,68,.25)}
+.tin{background:rgba(0,170,255,.1);color:var(--bl);border:1px solid rgba(0,170,255,.25)}
+.tadm{background:rgba(168,85,247,.1);color:var(--pu);border:1px solid rgba(168,85,247,.25)}
+.tusr{background:rgba(0,170,255,.1);color:var(--bl);border:1px solid rgba(0,170,255,.25)}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.bp{background:var(--green);color:#000}.bp:hover{background:var(--gdim);box-shadow:0 4px 14px var(--gg)}.bp:disabled{opacity:.45;cursor:not-allowed}
+.bg{background:transparent;color:var(--green);border:1px solid var(--green)}.bg:hover{background:var(--gg)}
+.bd{background:rgba(255,68,68,.08);color:var(--red);border:1px solid rgba(255,68,68,.25)}.bd:hover{background:rgba(255,68,68,.18)}
+.sm{padding:5px 11px;font-size:12px}
+
+/* FORMS */
+.fr{display:grid;gap:12px;margin-bottom:12px}
+.c2{grid-template-columns:1fr 1fr}
+.c3{grid-template-columns:1fr 1fr 1fr}
+label{display:block;font-size:11px;font-weight:600;color:var(--mt);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:9px 12px;color:var(--tx);font-family:inherit;font-size:13px;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--gg)}
+select option{background:var(--bg3)}
+input::placeholder,textarea::placeholder{color:var(--mt)}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.ov.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:26px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;animation:mi .25s ease}
+@keyframes mi{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.mhd{font-size:16px;font-weight:700;color:var(--green);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.mc2{cursor:pointer;background:none;border:none;color:var(--mt);font-size:18px;line-height:1}
+.mc2:hover{color:var(--tx)}
+.mft{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* SEARCH */
+.sb{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.sb input{flex:1;min-width:200px}
+
+/* AUTOCOMPLETE */
+.acw{position:relative}
+.acl{position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:600;background:var(--bg2);border:1px solid var(--green);border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.aci{padding:10px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--bd);transition:background .12s;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.aci:last-child{border-bottom:none}
+.aci:hover,.aci.sel{background:var(--gg)}
+.aci .ast{font-size:11px;color:var(--mt);flex-shrink:0}
+.mbadge{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--gg);border:1px solid var(--green);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--green);margin-top:6px}
+.mbadge button{background:none;border:none;color:var(--mt);cursor:pointer;font-size:16px;line-height:1}
+.mbadge button:hover{color:var(--red)}
+
+/* ALERTS */
+.al{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.aw{background:rgba(255,140,0,.08);border:1px solid rgba(255,140,0,.25);color:var(--or)}
+.as{background:rgba(0,255,65,.08);border:1px solid rgba(0,255,65,.25);color:var(--green)}
+
+/* CHART */
+.chart{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;height:160px;display:flex;align-items:flex-end;padding:12px;gap:6px}
+.cb{flex:1;border-radius:3px 3px 0 0;background:var(--green);opacity:.7;min-width:12px;transition:opacity .2s}
+.cb:hover{opacity:1}
+.cbr{background:var(--red)}
+
+/* PROGRESS */
+.pb{background:var(--bd);border-radius:3px;height:5px;overflow:hidden;margin-top:4px}
+.pf{height:100%;background:var(--green);border-radius:3px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--green);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--tx);display:flex;align-items:center;gap:8px;z-index:3000;transform:translateY(70px);opacity:0;transition:all .28s;box-shadow:0 8px 24px rgba(0,255,65,.15);max-width:300px}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* UTILS */
+.flex{display:flex}.g8{gap:8px}.g10{gap:10px}
+.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
+.mt12{margin-top:12px}.mt16{margin-top:16px}
+.cm{color:var(--mt)}.cg{color:var(--green)}.cr{color:var(--red)}.co{color:var(--or)}.cb2{color:var(--bl)}
+.fw7{font-weight:700}.fw6{font-weight:600}.fs12{font-size:12px}.fs11{font-size:11px}
+.empty{text-align:center;padding:36px;color:var(--mt);font-size:13px}
+.urow{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bd);gap:12px;flex-wrap:wrap}
+.uinfo{display:flex;align-items:center;gap:12px}
+.uav{width:38px;height:38px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+
+@media(max-width:600px){.c2,.c3{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.mv{font-size:22px}.htitle{font-size:16px}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="ls">
+  <div class="ll">🏭 MTEC Estoque</div>
+  <div class="lbw"><div class="lb"></div></div>
+  <div class="lt" id="lmsg">Conectando...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lbox">
+    <div class="llogo">
+      <span class="icon">🏭</span>
+      <h1>MTEC Estoque</h1>
+      <p>Sistema de Controle de Estoque</p>
+    </div>
+    <div id="lerr" class="lerr" style="display:none;margin-bottom:12px"></div>
+    <div class="lform">
+      <input type="text" id="lu" placeholder="Usuário" autocomplete="username">
+      <input type="password" id="lp" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="lbtn" id="btn-li" onclick="doLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div class="hdr">
+    <div>
+      <div class="htitle">🏭 MTEC Estoque</div>
+      <div class="hsub">Sistema de Controle de Estoque</div>
+    </div>
+    <div class="hright">
+      <div class="ubadge"><span id="h-nome">—</span><span class="rtag" id="h-role">—</span></div>
+      <button class="hbtn" onclick="doLogout()">Trocar usuário</button>
+      <button class="hbtn" onclick="openModal('modal-exp')">📤</button>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nb on" onclick="goPage('dashboard',this)">📊 Dashboard</button>
+    <button class="nb" onclick="goPage('materiais',this)">📦 Materiais</button>
+    <button class="nb" onclick="goPage('movimentacoes',this)">🔄 Movimentações</button>
+    <button class="nb" onclick="goPage('relatorios',this)">📋 Relatórios</button>
+    <button class="nb adm" onclick="goPage('usuarios',this)" style="display:none">👥 Usuários</button>
+    <button class="nb" onclick="goPage('config',this)">⚙️ Config</button>
+  </nav>
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page on">
+      <div class="g g3 mb20">
+        <div class="card mc glow"><div class="ml">📦 Total de Itens</div><div class="mv g" id="d-tot">—</div><div class="ms">Materiais cadastrados</div></div>
+        <div class="card mc"><div class="ml">⚠️ Estoque Baixo</div><div class="mv o" id="d-bx">—</div><div class="ms">Abaixo do mínimo</div></div>
+        <div class="card mc"><div class="ml">🚫 Zerados</div><div class="mv r" id="d-zt">—</div><div class="ms">Sem estoque</div></div>
+      </div>
+      <div class="g g2 mb20">
+        <div class="card"><div class="st">📈 Movimentos (7 dias)</div><div class="chart" id="d-chart"></div><div class="flex g10 mt12"><span class="fs12 cg">█ Entradas</span><span class="fs12 cr">█ Saídas</span></div></div>
+        <div class="card"><div class="st">🏆 Mais Movimentados</div><div id="d-top"></div></div>
+      </div>
+      <div class="card"><div class="st">🚨 Alertas de Estoque</div><div id="d-al"></div></div>
+    </div>
+
+    <!-- MATERIAIS -->
+    <div id="page-materiais" class="page">
+      <div id="mat-admin-bar" class="card mb16" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:var(--pu)">👑 Visão Admin:</span>
+          <select id="mat-usr-sel" onchange="onMatUsrChange()" style="width:auto;max-width:220px">
+            <option value="">Todos os usuários</option>
+          </select>
+          <span id="mat-usr-info" class="fs12 cm"></span>
+        </div>
+      </div>
+      <div class="sb">
+        <input type="text" id="b-mat" placeholder="🔍 Buscar material..." oninput="renderMat()">
+        <select id="f-cat" onchange="renderMat()" style="width:auto"><option value="">Todas categorias</option></select>
+        <button class="btn bp" onclick="openMatModal()">+ Novo Material</button>
+        <button class="btn bg sm" onclick="prtMat()" title="Imprimir lista de materiais em PDF">🖨️ PDF</button>
+      </div>
+      <div class="card"><div class="tw"><table>
+        <thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Qtd</th><th>Mín</th><th>Un</th><th>Valor Unit.</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tb-mat"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- MOVIMENTAÇÕES -->
+    <div id="page-movimentacoes" class="page">
+      <div class="flex g10 mb16">
+        <button class="btn bp" onclick="openMovModal('entrada')">📥 Entrada</button>
+        <button class="btn bg" onclick="openMovModal('saida')">📤 Saída</button>
+      </div>
+      <div class="sb">
+        <input type="text" id="b-mov" placeholder="🔍 Filtrar..." oninput="renderMov()">
+        <select id="f-mov" onchange="renderMov()" style="width:auto"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
+      </div>
+      <div class="card"><div class="tw"><table>
+        <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Responsável</th><th>Obs</th><th>Saldo</th><th>Ação</th></tr></thead>
+        <tbody id="tb-mov"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- RELATÓRIOS -->
+    <div id="page-relatorios" class="page">
+      <!-- Admin: seletor de usuário -->
+      <div id="rel-admin-bar" class="card mb16" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:var(--pu)">👑 Visão Admin:</span>
+          <select id="rel-usr-sel" onchange="onRelUsrChange()" style="width:auto;max-width:220px">
+            <option value="">Todos os usuários</option>
+          </select>
+          <span id="rel-usr-info" class="fs12 cm"></span>
+        </div>
+      </div>
+      <div class="card mb16">
+        <div class="st">🔎 Filtros</div>
+        <div class="fr c3" style="margin-bottom:0">
+          <div><label>Tipo</label><select id="rf-tp" onchange="renderRel()"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select></div>
+          <div><label>Produto</label><select id="rf-pr" onchange="renderRel()"><option value="">Todos</option></select></div>
+          <div><label>Período</label><select id="rf-pe" onchange="renderRel()"><option value="">Todo período</option><option value="7">7 dias</option><option value="30">30 dias</option><option value="90">90 dias</option></select></div>
+        </div>
+      </div>
+      <div class="g g3 mb16">
+        <div class="card">
+          <div class="st">📋 Inventário Geral</div>
+          <p class="cm fs12 mb12">Lista completa de materiais com status e quantidades.</p>
+          <div class="flex g8">
+            <button class="btn bp sm" onclick="prtInv()">🖨️ Imprimir / PDF</button>
+            <button class="btn bg sm" onclick="expCSV()">⬇️ CSV</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="st">📥 Relatório de Entradas</div>
+          <p class="cm fs12 mb12">Todas as entradas registradas no período.</p>
+          <div class="flex g8">
+            <button class="btn bp sm" onclick="prtMov('entrada')">🖨️ Imprimir / PDF</button>
+            <button class="btn bg sm" onclick="expMovFil('entrada')">⬇️ CSV</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="st">📤 Relatório de Saídas</div>
+          <p class="cm fs12 mb12">Todas as saídas registradas no período.</p>
+          <div class="flex g8">
+            <button class="btn bp sm" onclick="prtMov('saida')">🖨️ Imprimir / PDF</button>
+            <button class="btn bg sm" onclick="expMovFil('saida')">⬇️ CSV</button>
+          </div>
+        </div>
+      </div>
+      <div class="card mb16">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+          <div class="st" id="rf-tit" style="margin-bottom:0;flex:1">📊 Movimentos</div>
+          <div class="flex g8">
+            <button class="btn bp sm" onclick="prtMov()">🖨️ PDF filtro atual</button>
+            <button class="btn bg sm" onclick="expMovFil()">⬇️ CSV</button>
+          </div>
+        </div>
+        <div class="tw"><table><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Responsável</th><th>Obs</th><th>Saldo</th></tr></thead><tbody id="rf-tb"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+          <div class="st" style="margin-bottom:0;flex:1">📊 Resumo por Categoria</div>
+          <button class="btn bp sm" onclick="prtCats()">🖨️ PDF Categorias</button>
+        </div>
+        <div id="rf-cat"></div>
+      </div>
+    </div>
+
+    <!-- USUÁRIOS -->
+    <div id="page-usuarios" class="page">
+      <div class="card mb16"><div class="st">👥 Usuários Cadastrados</div><div id="ul"></div></div>
+      <div class="card">
+        <div class="st">➕ Criar Usuário</div>
+        <div class="fr c2">
+          <div><label>Usuário</label><input type="text" id="nu-u" placeholder="nome de usuário"></div>
+          <div><label>Nome completo</label><input type="text" id="nu-n" placeholder="nome completo"></div>
+        </div>
+        <div class="fr c2">
+          <div><label>Senha</label><input type="password" id="nu-p" placeholder="senha"></div>
+          <div><label>Perfil</label><select id="nu-r"><option value="usuario">Usuário</option></select></div>
+        </div>
+        <button class="btn bp sm" onclick="criarUser()">➕ Criar Usuário</button>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div id="page-config" class="page">
+      <!-- Aviso somente leitura para não-admin -->
+      <div id="cfg-readonly-banner" style="display:none;border-color:var(--or)" class="card mb16">
+        <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
+          <span style="font-size:20px">🔒</span>
+          <div>
+            <div style="font-weight:700;color:var(--or)">Acesso somente leitura</div>
+            <div class="cm fs12">Apenas administradores podem alterar as configurações do sistema.</div>
+          </div>
+        </div>
+      </div>
+      <div class="g g2">
+        <div class="card">
+          <div class="st">🏷️ Categorias</div>
+          <div id="cfg-cats-edit">
+            <div class="flex g10 mb16"><input type="text" id="nc" placeholder="Nova categoria..."><button class="btn bp sm" onclick="addCat()">+ Add</button></div>
+          </div>
+          <div id="lc"></div>
+        </div>
+        <div class="card">
+          <div class="st">🏢 Dados da Empresa</div>
+          <p class="cm fs12 mb12">Informações exibidas no cabeçalho de todos os relatórios PDF.</p>
+          <div class="fr">
+            <div><label>Nome da Empresa *</label><input type="text" id="ce" placeholder="Ex: MTEC Indústria Ltda"></div>
+            <div><label>CNPJ / CPF</label><input type="text" id="cnpj" placeholder="00.000.000/0001-00"></div>
+          </div>
+          <div class="fr c2">
+            <div><label>Endereço</label><input type="text" id="cend" placeholder="Rua, número, cidade - UF"></div>
+            <div><label>Telefone</label><input type="text" id="ctel" placeholder="(00) 00000-0000"></div>
+          </div>
+          <div class="fr c2">
+            <div><label>Responsável Padrão</label><input type="text" id="cr" placeholder="Nome do responsável"></div>
+            <div><label>Estoque Mínimo Padrão</label><input type="number" id="cm" value="5" min="0"></div>
+          </div>
+          <div id="cfg-save-btn"><button class="btn bp sm" onclick="saveCfg()">💾 Salvar Configurações</button></div>
+        </div>
+      </div>
+      <div class="card mt16"><div class="st">💾 Backup</div><div class="flex g10"><button class="btn bg" onclick="expJSON()">⬇️ Backup JSON</button></div><p class="cm fs12 mt12">Dados no Supabase. Acesso de qualquer dispositivo.</p></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL MATERIAL -->
+<div id="modal-mat" class="ov">
+  <div class="modal">
+    <div class="mhd"><span id="mm-t">📦 Novo Material</span><button class="mc2" onclick="closeModal('modal-mat')">✕</button></div>
+    <div class="fr c2"><div><label>Código</label><input type="text" id="m-cd" placeholder="Ex: MAT001"></div><div><label>Nome *</label><input type="text" id="m-nm" placeholder="Nome do material"></div></div>
+    <div class="fr c2"><div><label>Categoria</label><select id="m-ct"></select></div><div><label>Unidade</label><select id="m-un"><option>UN</option><option>KG</option><option>LT</option><option>M</option><option>M²</option><option>CX</option><option>PC</option><option>RL</option></select></div></div>
+    <div class="fr c3"><div><label>Quantidade</label><input type="number" id="m-qt" value="0" min="0"></div><div><label>Qtd Mínima</label><input type="number" id="m-mn" value="5" min="0"></div><div><label>Valor Unit. (R$)</label><input type="number" id="m-vl" value="0" step="0.01"></div></div>
+    <div class="fr c2"><div><label>Localização</label><input type="text" id="m-lc" placeholder="Ex: Prateleira A3"></div><div><label>Fornecedor</label><input type="text" id="m-fn" placeholder="Nome do fornecedor"></div></div>
+    <div class="fr"><div><label>Observações</label><textarea id="m-ob" rows="2" placeholder="Notas adicionais..."></textarea></div></div>
+    <div class="fr c2" id="m-owner-row" style="display:none">
+      <div>
+        <label>Usuário dono (apenas admin)</label>
+        <select id="m-owner"></select>
+      </div>
+      <div class="cm fs12" style="align-self:flex-end">
+        <span id="m-owner-help">O material ficará visível apenas para o usuário selecionado.</span>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bg" onclick="closeModal('modal-mat')">Cancelar</button><button class="btn bp" id="b-svm" onclick="saveMat()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL MOVIMENTO -->
+<div id="modal-mov" class="ov">
+  <div class="modal">
+    <div class="mhd"><span id="mv-t">📥 Registrar Entrada</span><button class="mc2" onclick="closeModal('modal-mov')">✕</button></div>
+    <input type="hidden" id="mv-tp"><input type="hidden" id="mv-id">
+    <div class="fr">
+      <div>
+        <label>Material *</label>
+        <div class="acw">
+          <input type="text" id="mv-q" placeholder="Digite o nome do material..." oninput="acSearch()" onkeydown="acKey(event)" autocomplete="off">
+          <div class="acl" id="mv-ac" style="display:none"></div>
+        </div>
+        <div id="mv-bd" style="display:none"></div>
+      </div>
+    </div>
+    <div class="fr c2"><div><label>Quantidade *</label><input type="number" id="mv-qt" min="1" value="1"></div><div><label>Responsável</label><input type="text" id="mv-rs" placeholder="Nome do responsável"></div></div>
+    <div class="fr"><div><label>Observação</label><input type="text" id="mv-ob" placeholder="NF, motivo, etc."></div></div>
+    <div class="mft"><button class="btn bg" onclick="closeModal('modal-mov')">Cancelar</button><button class="btn bp" id="b-sv2" onclick="saveMov()">✅ Confirmar</button></div>
+  </div>
+</div>
+
+<!-- MODAL EXPORT -->
+<div id="modal-exp" class="ov">
+  <div class="modal" style="max-width:340px">
+    <div class="mhd">📤 Exportar<button class="mc2" onclick="closeModal('modal-exp')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn bp" onclick="expCSV();closeModal('modal-exp')">📊 Materiais (CSV)</button>
+      <button class="btn bg" onclick="expMovFil('entrada');closeModal('modal-exp')">📊 Entradas (CSV)</button>
+      <button class="btn bg" onclick="expMovFil('saida');closeModal('modal-exp')">📊 Saídas (CSV)</button>
+      <button class="btn bg" onclick="expJSON();closeModal('modal-exp')">💾 Backup JSON</button>
+      <button class="btn bg" onclick="prtInv();closeModal('modal-exp')">🖨️ Imprimir Inventário</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SURL='https://ogbbzvvdwpmdebuygvyz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nYmJ6dnZkd3BtZGVidXlndnl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2OTMzMTAsImV4cCI6MjA4NzI2OTMxMH0.ZyhUBGIfEFiXmZYNlCDOJnmuyWLOk7J6PeGiVaYtEFY';
+const sb=supabase.createClient(SURL,SKEY);
+
+let mats=[],movs=[],cats=['Geral','Elétrico','Hidráulico','Ferramentas','EPI','Escritório'];
+let cfg={empresa:'MTEC',cnpj:'',endereco:'',telefone:'',responsavel:'Administrador',minimo:5};
+let editId=null,acIdx=-1,curUser=null,allUsers=[];
+let adminMatUser=null; // null = todos, id = usuário específico (admin)
+let adminRelUser=null;
+
+// ── INIT ──
+function init(){
+  localStorage.removeItem('mtec_u');
+  // Esconder loading imediatamente — sem animação
+  const ls=document.getElementById('ls');
+  ls.style.display='none';
+  document.getElementById('login').classList.add('show');
+}
+
+function hs(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return'h'+Math.abs(h).toString(36)+s.length;}
+
+async function loadData(){
+  const uid=curUser.id,isAdm=curUser.role==='admin';
+  const mq=isAdm?sb.from('materiais').select('*').order('nome'):sb.from('materiais').select('*').eq('user_id',uid).order('nome');
+  const vq=isAdm?sb.from('movimentos').select('*').order('created_at',{ascending:false}).limit(500):sb.from('movimentos').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(500);
+  const cq=sb.from('configuracoes').select('*').eq('user_id',uid);
+  const[mr,vr,cr]=await Promise.all([mq,vq,cq]);
+  if(mr.data)mats=mr.data;
+  if(vr.data)movs=vr.data;
+  if(cr.data)cr.data.forEach(r=>{
+    if(r.chave==='config')try{cfg=JSON.parse(r.valor);}catch(e){}
+    if(r.chave==='cats')try{cats=JSON.parse(r.valor);}catch(e){}
+  });
+  if(isAdm){const{data:us}=await sb.from('usuarios').select('id,username,nome,role,created_at').order('created_at');if(us)allUsers=us;}
+}
+
+// ── AUTH ──
+function showErr(m){const e=document.getElementById('lerr');e.textContent=m;e.style.display='block';}
+
+async function doLogin(){
+  const u=document.getElementById('lu').value.trim().toLowerCase();
+  const p=document.getElementById('lp').value;
+  if(!u||!p){showErr('Preencha usuário e senha.');return;}
+  const btn=document.getElementById('btn-li');btn.disabled=true;btn.textContent='Entrando...';
+  const{data,error}=await sb.from('usuarios').select('*').eq('username',u).maybeSingle();
+  btn.disabled=false;btn.textContent='Entrar';
+  if(error){
+    if(error.message.includes('relation')||error.code==='42P01'){
+      showErr('Banco não configurado. Execute o setup_supabase.sql no Supabase.');
+    } else {
+      showErr('Erro de conexão: '+error.message);
+    }
+    return;
+  }
+  if(!data){showErr('Usuário "'+u+'" não encontrado.');return;}
+  if(data.senha!==hs(p)){showErr('Senha incorreta. Tente novamente.');return;}
+  curUser={id:data.id,username:data.username,nome:data.nome,role:data.role};
+  localStorage.setItem('mtec_u',JSON.stringify(curUser));
+  document.getElementById('login').classList.remove('show');
+  setMsg('Carregando dados...');
+  const lsEl=document.getElementById('ls');
+  lsEl.classList.remove('hide');
+  lsEl.style.opacity='1';
+  lsEl.style.display='flex';
+  await loadData();
+  showApp();
+}
+
+
+
+function doLogout(){
+  localStorage.removeItem('mtec_u');
+  curUser=null;mats=[];movs=[];allUsers=[];adminMatUser=null;adminRelUser=null;
+  cfg={empresa:'MTEC',cnpj:'',endereco:'',telefone:'',responsavel:'Administrador',minimo:5};
+  cats=['Geral','Elétrico','Hidráulico','Ferramentas','EPI','Escritório'];
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').classList.add('show');
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+  document.getElementById('lerr').style.display='none';
+}
+
+function showApp(){
+  hideLs();
+  document.getElementById('app').style.display='block';
+  document.getElementById('h-nome').textContent=curUser.nome;
+  document.getElementById('h-role').textContent=curUser.role==='admin'?'👑 Admin':'👤 Usuário';
+  document.querySelectorAll('.adm').forEach(el=>el.style.display=curUser.role==='admin'?'flex':'none');
+  // Admin bars in Materiais and Relatórios
+  const isAdm=curUser.role==='admin';
+  document.getElementById('mat-admin-bar').style.display=isAdm?'block':'none';
+  document.getElementById('rel-admin-bar').style.display=isAdm?'block':'none';
+  // Populate user selectors for admin
+  if(isAdm){
+    const opts='<option value="">Todos os usuários</option>'+allUsers.map(u=>`<option value="${u.id}">${u.nome} (@${u.username})</option>`).join('');
+    document.getElementById('mat-usr-sel').innerHTML=opts;
+    document.getElementById('rel-usr-sel').innerHTML=opts;
+  }
+  // Config readonly for non-admin
+  const cfgEdit=document.getElementById('cfg-cats-edit');
+  const cfgSave=document.getElementById('cfg-save-btn');
+  const cfgBanner=document.getElementById('cfg-readonly-banner');
+  const inputs=['ce','cnpj','cend','ctel','cr','cm','nc'];
+  if(!isAdm){
+    cfgBanner.style.display='block';
+    cfgEdit.style.display='none';
+    cfgSave.style.display='none';
+    inputs.forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=true;el.style.opacity='.5';}});
+  } else {
+    cfgBanner.style.display='none';
+    cfgEdit.style.display='block';
+    cfgSave.style.display='block';
+    inputs.forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=false;el.style.opacity='1';}});
+  }
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  const _nb=document.querySelector('.nb');if(_nb)_nb.classList.add('on');
+  goPage('dashboard',_nb);
+}
+
+// ── UI ──
+function setMsg(m){document.getElementById('lmsg').textContent=m;}
+function hideLs(){const e=document.getElementById('ls');e.style.transition='opacity .2s';e.style.opacity='0';setTimeout(()=>{e.style.display='none';e.style.opacity='1';},220);}
+let toastT;
+function showToast(m){const t=document.getElementById('toast');t.innerHTML=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');editId=null;}
+
+function goPage(p,btn){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+p).classList.add('on');
+  if(btn)btn.classList.add('on');
+  if(p==='dashboard')renderDash();
+  else if(p==='materiais')renderMat();
+  else if(p==='movimentacoes')renderMov();
+  else if(p==='relatorios')renderRel();
+  else if(p==='usuarios')renderUsers();
+  else if(p==='config')renderCfg();
+}
+
+function gst(m){if(m.qtd<=0)return{l:'Zerado',c:'tout'};if(m.qtd<=m.minimo)return{l:'Baixo',c:'tlo'};return{l:'OK',c:'tok'};}
+function fd(iso){if(!iso)return'-';const d=new Date(iso);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function fm(v){return'R$ '+Number(v||0).toFixed(2).replace('.',',');}
+
+// ── DASHBOARD ──
+function renderDash(){
+  document.getElementById('d-tot').textContent=mats.length;
+  document.getElementById('d-bx').textContent=mats.filter(m=>m.qtd>0&&m.qtd<=m.minimo).length;
+  document.getElementById('d-zt').textContent=mats.filter(m=>m.qtd<=0).length;
+  const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toDateString();});
+  const mx=Math.max(...days.map(ds=>{const e=movs.filter(m=>m.tipo==='entrada'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);const sv=movs.filter(m=>m.tipo==='saida'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);return Math.max(e,sv);}),1);
+  document.getElementById('d-chart').innerHTML=days.map(ds=>{const e=movs.filter(m=>m.tipo==='entrada'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);const sv=movs.filter(m=>m.tipo==='saida'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);return`<div style="flex:1;display:flex;align-items:flex-end;gap:2px;height:100%"><div class="cb" style="height:${Math.max(4,e/mx*100)}%;flex:1" title="Entrada:${e}"></div><div class="cb cbr" style="height:${Math.max(4,sv/mx*100)}%;flex:1" title="Saída:${sv}"></div></div>`;}).join('');
+  const cnt={};movs.forEach(m=>{cnt[m.material_nome]=(cnt[m.material_nome]||0)+Number(m.qtd);});
+  const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,5);const mxt=top.length?top[0][1]:1;
+  document.getElementById('d-top').innerHTML=top.length?top.map(([n,v])=>`<div style="margin-bottom:10px"><div class="flex g10" style="justify-content:space-between;margin-bottom:3px;font-size:12px"><span class="fw6">${n}</span><span class="cg fw7">${v}</span></div><div class="pb"><div class="pf" style="width:${v/mxt*100}%"></div></div></div>`).join(''):'<p class="cm fs12">Nenhuma movimentação ainda.</p>';
+  const al=mats.filter(m=>m.qtd<=m.minimo);
+  document.getElementById('d-al').innerHTML=al.length?`<div class="tw"><table><thead><tr><th>Material</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Status</th></tr></thead><tbody>${al.map(m=>{const s=gst(m);return`<tr><td class="fw6">${m.nome}</td><td class="fw7 ${m.qtd<=0?'cr':'co'}">${m.qtd} ${m.unidade}</td><td class="cm">${m.minimo} ${m.unidade}</td><td><span class="tag ${s.c}">${s.l}</span></td></tr>`;}).join('')}</tbody></table></div>`:'<div class="al as">✅ Todos os itens estão com estoque adequado!</div>';
+}
+
+// ── MATERIAIS ──
+function getMatsVisiveis(){
+  if(curUser.role!=='admin'||!adminMatUser)return mats;
+  return mats.filter(m=>m.user_id===adminMatUser);
+}
+
+function onMatUsrChange(){
+  const v=document.getElementById('mat-usr-sel').value;
+  adminMatUser=v?Number(v):null;
+  const u=allUsers.find(x=>x.id===adminMatUser);
+  document.getElementById('mat-usr-info').textContent=u?`${mats.filter(m=>m.user_id===adminMatUser).length} materiais`:'';
+  renderMat();
+}
+
+function renderMat(){
+  const sel=document.getElementById('f-cat');const cv=sel.value;
+  sel.innerHTML='<option value="">Todas categorias</option>'+cats.map(c=>`<option value="${c}"${c===cv?' selected':''}>${c}</option>`).join('');
+  const q=(document.getElementById('b-mat')?.value||'').toLowerCase();const cat=document.getElementById('f-cat')?.value||'';
+  const base=getMatsVisiveis();
+  const fil=base.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q)||(m.fornecedor||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
+  document.getElementById('tb-mat').innerHTML=fil.length?fil.map(m=>{const s=gst(m);return`<tr><td class="cm fs11">${m.codigo||'-'}</td><td class="fw6">${m.nome}${m.local?`<br><span class="cm fs11">📍 ${m.local}</span>`:''}${m.fornecedor?`<br><span class="cm fs11">🏭 ${m.fornecedor}</span>`:''}</td><td class="cb2 fs12">${m.categoria}</td><td class="fw7 ${m.qtd<=0?'cr':m.qtd<=m.minimo?'co':'cg'}">${m.qtd}</td><td class="cm">${m.minimo}</td><td class="cm fs12">${m.unidade}</td><td>${fm(m.valor)}</td><td><span class="tag ${s.c}">${s.l}</span></td><td><div class="flex g8"><button class="btn bg sm" onclick="editMat(${m.id})">✏️</button><button class="btn bd sm" onclick="delMat(${m.id})">🗑️</button></div></td></tr>`;}).join(''):`<tr><td colspan="9"><div class="empty">Nenhum material encontrado.</div></td></tr>`;
+}
+
+function prtMat(){
+  const q=(document.getElementById('b-mat')?.value||'').toLowerCase();
+  const cat=document.getElementById('f-cat')?.value||'';
+  const base=getMatsVisiveis();
+  const fil=base.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
+  const usrLabel=adminMatUser?(allUsers.find(u=>u.id===adminMatUser)?.nome||''):'Todos';
+  const empresa=cfg.empresa||'MTEC';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${cfg.empresa||'MTEC'} - Materiais</title><style>${_pdfStyle()}</style></head><body>
+  ${_pdfCabecalho('Relatório de Materiais')}
+    <div class="meta">
+      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
+      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
+      <div>Total: ${fil.length} itens</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead>
+    <tbody>${fil.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
+  </table>
+  <div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · ${new Date().toLocaleDateString('pt-BR')}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+function fillCats(id,val){document.getElementById(id).innerHTML=cats.map(c=>`<option value="${c}"${c===val?' selected':''}>${c}</option>`).join('');}
+
+function openMatModal(){
+  editId=null;document.getElementById('mm-t').textContent='📦 Novo Material';
+  ['m-cd','m-nm','m-lc','m-fn','m-ob'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('m-qt').value=0;document.getElementById('m-mn').value=cfg.minimo||5;
+  document.getElementById('m-vl').value=0;document.getElementById('m-un').value='UN';
+  fillCats('m-ct','Geral');
+  const ownerRow=document.getElementById('m-owner-row');
+  const ownerSel=document.getElementById('m-owner');
+  if(ownerRow&&ownerSel){
+    if(curUser&&curUser.role==='admin'){
+      ownerRow.style.display='grid';
+      ownerSel.innerHTML=allUsers.map(u=>`<option value="${u.id}"${u.id===curUser.id?' selected':''}>${u.nome} (@${u.username})</option>`).join('');
+    }else{
+      ownerRow.style.display='none';
+    }
+  }
+  openModal('modal-mat');
+}
+
+function editMat(id){
+  const m=mats.find(x=>x.id===id);if(!m)return;
+  editId=id;document.getElementById('mm-t').textContent='✏️ Editar Material';
+  document.getElementById('m-cd').value=m.codigo||'';document.getElementById('m-nm').value=m.nome;
+  document.getElementById('m-qt').value=m.qtd;document.getElementById('m-mn').value=m.minimo;
+  document.getElementById('m-vl').value=m.valor;document.getElementById('m-un').value=m.unidade;
+  document.getElementById('m-lc').value=m.local||'';document.getElementById('m-fn').value=m.fornecedor||'';
+  document.getElementById('m-ob').value=m.obs||'';fillCats('m-ct',m.categoria);
+  const ownerRow=document.getElementById('m-owner-row');
+  const ownerSel=document.getElementById('m-owner');
+  if(ownerRow&&ownerSel){
+    if(curUser&&curUser.role==='admin'){
+      ownerRow.style.display='grid';
+      ownerSel.innerHTML=allUsers.map(u=>`<option value="${u.id}"${u.id===m.user_id?' selected':''}>${u.nome} (@${u.username})</option>`).join('');
+    }else{
+      ownerRow.style.display='none';
+    }
+  }
+  openModal('modal-mat');
+}
+
+async function saveMat(){
+  const nome=document.getElementById('m-nm').value.trim();if(!nome){showToast('⚠️ Nome é obrigatório!');return;}
+  const btn=document.getElementById('b-svm');btn.disabled=true;btn.textContent='⏳...';
+  let ownerId=curUser.id;
+  const ownerSel=document.getElementById('m-owner');
+  if(curUser&&curUser.role==='admin'&&ownerSel&&ownerSel.value){
+    ownerId=Number(ownerSel.value)||curUser.id;
+  }
+  const pl={user_id:ownerId,codigo:document.getElementById('m-cd').value.trim()||('MAT'+Date.now()),nome,categoria:document.getElementById('m-ct').value,unidade:document.getElementById('m-un').value,qtd:Number(document.getElementById('m-qt').value)||0,minimo:Number(document.getElementById('m-mn').value)||0,valor:Number(document.getElementById('m-vl').value)||0,local:document.getElementById('m-lc').value.trim(),fornecedor:document.getElementById('m-fn').value.trim(),obs:document.getElementById('m-ob').value.trim()};
+  let err;
+  if(editId){const r=await sb.from('materiais').update(pl).eq('id',editId);err=r.error;if(!err){const i=mats.findIndex(x=>x.id===editId);if(i>=0)mats[i]={...mats[i],...pl};}}
+  else{const r=await sb.from('materiais').insert(pl).select().single();err=r.error;if(!err)mats.push(r.data);}
+  btn.disabled=false;btn.textContent='💾 Salvar';
+  if(err){showToast('❌ '+err.message);return;}
+  showToast(editId?'✅ Material atualizado!':'✅ Material cadastrado!');
+  closeModal('modal-mat');renderMat();renderDash();
+}
+
+async function delMat(id){
+  const mat=mats.find(m=>m.id===id);if(!mat)return;
+  if(!confirm(`Excluir "${mat.nome}"?\n\nTodos os movimentos associados também serão removidos.`))return;
+  await sb.from('movimentos').delete().eq('material_id',id);
+  const{error}=await sb.from('materiais').delete().eq('id',id);
+  if(error){showToast('❌ '+error.message);return;}
+  mats=mats.filter(m=>m.id!==id);
+  movs=movs.filter(m=>m.material_id!==id);
+  renderMat();renderDash();showToast('🗑️ Material e movimentos removidos.');
+}
+
+// ── AUTOCOMPLETE ──
+function acSearch(){
+  const q=document.getElementById('mv-q').value.toLowerCase().trim();
+  const l=document.getElementById('mv-ac');acIdx=-1;
+  if(!q){l.style.display='none';return;}
+  const f=mats.filter(m=>m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q));
+  if(!f.length){l.style.display='none';return;}
+  l.innerHTML=f.slice(0,8).map(m=>{const s=gst(m);return`<div class="aci" onclick="acSel(${m.id})"><span class="fw6">${m.codigo?`<span class="cm fs11">${m.codigo} · </span>`:''}${m.nome}</span><span class="ast">${m.qtd} ${m.unidade} · <span class="tag ${s.c}" style="padding:1px 6px;font-size:10px">${s.l}</span></span></div>`;}).join('');
+  l.style.display='block';
+}
+function acSel(id){
+  const m=mats.find(x=>x.id===id);if(!m)return;
+  document.getElementById('mv-id').value=id;document.getElementById('mv-q').value='';
+  document.getElementById('mv-ac').style.display='none';
+  const b=document.getElementById('mv-bd');b.style.display='block';
+  const _n=m.nome.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  b.innerHTML=`<div class="mbadge"><span>✅ <strong>${_n}</strong> <span class="cm fs12">(${m.qtd} ${m.unidade} em estoque)</span></span><button onclick="acClr()">✕</button></div>`;
+}
+function acClr(){document.getElementById('mv-id').value='';document.getElementById('mv-q').value='';document.getElementById('mv-bd').style.display='none';document.getElementById('mv-ac').style.display='none';document.getElementById('mv-q').focus();}
+function acKey(e){
+  const l=document.getElementById('mv-ac');const its=l.querySelectorAll('.aci');if(!its.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();acIdx=Math.min(acIdx+1,its.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();acIdx=Math.max(acIdx-1,0);}
+  else if(e.key==='Enter'&&acIdx>=0){e.preventDefault();its[acIdx].click();return;}
+  else if(e.key==='Escape'){l.style.display='none';return;}
+  its.forEach((it,i)=>it.classList.toggle('sel',i===acIdx));
+  if(acIdx>=0)its[acIdx].scrollIntoView({block:'nearest'});
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.acw')){const l=document.getElementById('mv-ac');if(l)l.style.display='none';}});
+
+// ── MOVIMENTAÇÕES ──
+function openMovModal(tipo){
+  document.getElementById('mv-tp').value=tipo;
+  document.getElementById('mv-t').textContent=tipo==='entrada'?'📥 Registrar Entrada':'📤 Registrar Saída';
+  document.getElementById('mv-qt').value=1;document.getElementById('mv-ob').value='';
+  document.getElementById('mv-rs').value=cfg.responsavel||curUser.nome||'';
+  acClr();openModal('modal-mov');setTimeout(()=>document.getElementById('mv-q').focus(),200);
+}
+
+async function saveMov(){
+  const mid=Number(document.getElementById('mv-id').value);const qtd=Number(document.getElementById('mv-qt').value);const tipo=document.getElementById('mv-tp').value;
+  if(!mid||!qtd){showToast('⚠️ Selecione um material e informe a quantidade!');return;}
+  const mat=mats.find(m=>m.id===mid);if(!mat)return;
+  if(tipo==='saida'&&qtd>mat.qtd){showToast('⛔ Quantidade insuficiente!');return;}
+  const btn=document.getElementById('b-sv2');btn.disabled=true;btn.textContent='⏳...';
+  const ns=tipo==='entrada'?Number(mat.qtd)+qtd:Number(mat.qtd)-qtd;
+  const{error:e1}=await sb.from('materiais').update({qtd:ns}).eq('id',mid);
+  if(e1){showToast('❌ '+e1.message);btn.disabled=false;btn.textContent='✅ Confirmar';return;}
+  const{data:mv,error:e2}=await sb.from('movimentos').insert({user_id:curUser.id,tipo,material_id:mid,material_nome:mat.nome,qtd,responsavel:document.getElementById('mv-rs').value||curUser.nome,obs:document.getElementById('mv-ob').value,saldo:ns}).select().single();
+  btn.disabled=false;btn.textContent='✅ Confirmar';
+  if(e2){showToast('❌ '+e2.message);return;}
+  mat.qtd=ns;if(mv)movs.unshift(mv);
+  closeModal('modal-mov');renderMov();renderMat();renderDash();
+  showToast(`✅ ${tipo==='entrada'?'Entrada':'Saída'} registrada! Saldo: ${ns} ${mat.unidade}`);
+}
+
+async function delMov(id){
+  const mov=movs.find(m=>m.id===id);if(!mov)return;
+  if(!confirm(`Excluir esta ${mov.tipo} de ${mov.qtd}x "${mov.material_nome}"?\n\nO saldo será revertido.`))return;
+  const mat=mats.find(m=>m.id===mov.material_id);
+  if(mat){const rv=mov.tipo==='entrada'?Number(mat.qtd)-Number(mov.qtd):Number(mat.qtd)+Number(mov.qtd);const{error:e1}=await sb.from('materiais').update({qtd:rv}).eq('id',mat.id);if(e1){showToast('❌ '+e1.message);return;}mat.qtd=rv;}
+  const{error:e2}=await sb.from('movimentos').delete().eq('id',id);if(e2){showToast('❌ '+e2.message);return;}
+  movs=movs.filter(m=>m.id!==id);renderMov();renderMat();renderDash();showToast('🔄 Movimentação excluída e saldo revertido!');
+}
+
+function renderMov(){
+  const q=(document.getElementById('b-mov')?.value||'').toLowerCase();const tp=document.getElementById('f-mov')?.value||'';
+  const fil=movs.filter(m=>(!q||(m.material_nome||'').toLowerCase().includes(q)||(m.responsavel||'').toLowerCase().includes(q))&&(!tp||m.tipo===tp));
+  document.getElementById('tb-mov').innerHTML=fil.length?fil.map(m=>`<tr><td class="cm fs11">${fd(m.created_at)}</td><td><span class="tag ${m.tipo==='entrada'?'tin':'tout'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</span></td><td class="fw6">${m.material_nome||'-'}</td><td class="fw7 ${m.tipo==='entrada'?'cg':'cr'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td class="cm fs12">${m.responsavel||'-'}</td><td class="cm fs11">${m.obs||'-'}</td><td class="fw6">${m.saldo??'-'}</td><td><button class="btn bd sm" onclick="delMov(${m.id})" title="Excluir e reverter">🗑️</button></td></tr>`).join(''):`<tr><td colspan="8"><div class="empty">Nenhuma movimentação encontrada.</div></td></tr>`;
+}
+
+// ── RELATÓRIOS ──
+function getMovsVisiveis(){
+  if(curUser.role!=='admin'||!adminRelUser)return movs;
+  return movs.filter(m=>m.user_id===adminRelUser);
+}
+
+function onRelUsrChange(){
+  const v=document.getElementById('rel-usr-sel').value;
+  adminRelUser=v?Number(v):null;
+  const u=allUsers.find(x=>x.id===adminRelUser);
+  document.getElementById('rel-usr-info').textContent=u?`${movs.filter(m=>m.user_id===adminRelUser).length} movimentos`:'';
+  renderRel();
+}
+
+function getFilMov(){
+  const tp=document.getElementById('rf-tp')?.value||'';const pr=Number(document.getElementById('rf-pr')?.value||0);const pe=Number(document.getElementById('rf-pe')?.value||0);
+  const lim=pe?new Date(Date.now()-pe*86400000):null;
+  const base=getMovsVisiveis();
+  return base.filter(m=>(!tp||m.tipo===tp)&&(!pr||m.material_id===pr)&&(!lim||new Date(m.created_at)>=lim));
+}
+
+function renderRel(){
+  const sp=document.getElementById('rf-pr');
+  if(sp){const cv=sp.value;const base=getMovsVisiveis();const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;sp.innerHTML='<option value="">Todos</option>'+uMats.map(m=>`<option value="${m.id}"${String(m.id)===cv?' selected':''}>${m.nome}</option>`).join('');if(cv)sp.value=cv;}
+  const fil=getFilMov();const tp=document.getElementById('rf-tp')?.value||'';
+  let t='📊 ';if(tp==='entrada')t+='Entradas';else if(tp==='saida')t+='Saídas';else t+='Todos os Movimentos';
+  const te=document.getElementById('rf-tit');if(te)te.textContent=t;
+  const tb=document.getElementById('rf-tb');
+  if(tb)tb.innerHTML=fil.length?fil.map(m=>`<tr><td class="cm fs11">${fd(m.created_at)}</td><td><span class="tag ${m.tipo==='entrada'?'tin':'tout'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</span></td><td class="fw6">${m.material_nome||'-'}</td><td class="fw7 ${m.tipo==='entrada'?'cg':'cr'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td class="cm fs12">${m.responsavel||'-'}</td><td class="cm fs11">${m.obs||'-'}</td><td class="fw6">${m.saldo??'-'}</td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">Sem resultados.</div></td></tr>`;
+  const uMats2=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
+  const ct={};uMats2.forEach(m=>{if(!ct[m.categoria])ct[m.categoria]={n:0,v:0,b:0};ct[m.categoria].n++;ct[m.categoria].v+=Number(m.qtd)*Number(m.valor);if(m.qtd<=m.minimo)ct[m.categoria].b++;});
+  const rc=document.getElementById('rf-cat');if(rc)rc.innerHTML=Object.entries(ct).map(([c,d])=>`<div style="display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap"><span class="fw7 cb2" style="min-width:110px">${c}</span><span class="cm fs12">${d.n} itens</span><span class="cg fw7">${fm(d.v)}</span>${d.b?`<span class="tag tlo">${d.b} alerta${d.b>1?'s':''}</span>`:''}</div>`).join('')||'<p class="cm fs12">Sem dados.</p>';
+}
+
+function expMovFil(tf){const d=tf?getMovsVisiveis().filter(m=>m.tipo===tf):getFilMov();dlCSV([['Data','Tipo','Material','Qtd','Responsavel','Obs','Saldo'],...d.map(m=>[fd(m.created_at),m.tipo,m.material_nome,m.qtd,m.responsavel,m.obs,m.saldo])],`mtec_${tf||'movimentos'}`);showToast('✅ CSV exportado!');}
+
+function _pdfCabecalho(titulo){
+  const e=cfg.empresa||'MTEC';
+  const info=[cfg.cnpj,cfg.endereco,cfg.telefone].filter(Boolean).join(' | ');
+  return `<div class="hdr">
+    <div>
+      <h1>🏭 ${e}</h1>
+      ${info?`<div style="font-size:9px;color:#555;margin-top:2px">${info}</div>`:''}
+      <div style="font-size:12px;font-weight:600;color:#333;margin-top:4px">${titulo}</div>
+    </div>`;
+}
+function _pdfStyle(){
+  return `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #00aa33}.hdr h1{font-size:18px;color:#00aa33;font-weight:800}.hdr .meta{text-align:right;font-size:10px;color:#666}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#00aa33;color:#fff;padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px}td{padding:6px 9px;border-bottom:1px solid #e8e8e8}tr:nth-child(even) td{background:#fafafa}.in{color:#0077cc;font-weight:700}.out{color:#cc3300;font-weight:700}.ok{color:#00aa33}.lo{color:#ff8c00}.ot{color:#ff4444}.ftr{margin-top:16px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px}@media print{body{padding:10px}@page{margin:15mm}}`;
+}
+
+function prtMov(tf){
+  const empresa=cfg.empresa||'MTEC';
+  const d=tf?getMovsVisiveis().filter(m=>m.tipo===tf):getFilMov();
+  const tit=tf==='entrada'?'Entradas':tf==='saida'?'Saídas':'Movimentos';
+  const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
+  const totE=d.filter(m=>m.tipo==='entrada').reduce((s,m)=>s+Number(m.qtd),0);
+  const totS=d.filter(m=>m.tipo==='saida').reduce((s,m)=>s+Number(m.qtd),0);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - ${tit}</title><style>${_pdfStyle()}</style></head><body>
+  ${_pdfCabecalho('Relatório de ' + tit)}
+    <div class="meta">
+      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
+      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
+      <div>Total: ${d.length} registros${!tf?` | ▲ ${totE} entradas / ▼ ${totS} saídas`:''}</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Responsável</th><th>Observação</th><th>Saldo</th></tr></thead>
+    <tbody>${d.map(m=>`<tr><td>${fd(m.created_at)}</td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</td><td><strong>${m.material_nome||''}</strong></td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td>${m.responsavel||'-'}</td><td>${m.obs||'-'}</td><td><strong>${m.saldo??'-'}</strong></td></tr>`).join('')}</tbody>
+  </table>
+  <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+function prtCats(){
+  const empresa=cfg.empresa||'MTEC';
+  const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
+  const ct={};uMats.forEach(m=>{if(!ct[m.categoria])ct[m.categoria]={n:0,v:0,b:0,ze:0};ct[m.categoria].n++;ct[m.categoria].v+=Number(m.qtd)*Number(m.valor);if(m.qtd<=0)ct[m.categoria].ze++;else if(m.qtd<=m.minimo)ct[m.categoria].b++;});
+  const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - Categorias</title><style>${_pdfStyle()}
+  .cat-row{display:flex;gap:20px;padding:10px 0;border-bottom:1px solid #eee;align-items:center}
+  .cat-name{font-weight:700;color:#0055aa;min-width:140px;font-size:12px}
+  .cat-val{color:#00aa33;font-weight:700}
+  .cat-alert{color:#ff8c00;font-size:10px;font-weight:600}
+  </style></head><body>
+  ${_pdfCabecalho('Resumo por Categoria')}
+    <div class="meta">
+      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
+      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
+      <div>Total: ${uMats.length} itens · ${Object.keys(ct).length} categorias</div>
+    </div>
+  </div>
+  ${Object.entries(ct).map(([c,d])=>`<div class="cat-row">
+    <span class="cat-name">${c}</span>
+    <span>${d.n} itens</span>
+    <span class="cat-val">R$ ${d.v.toFixed(2).replace('.',',')}</span>
+    ${d.b?`<span class="cat-alert">⚠️ ${d.b} estoque baixo</span>`:''}
+    ${d.ze?`<span style="color:#ff4444;font-size:10px;font-weight:600">🚫 ${d.ze} zerado(s)</span>`:''}
+  </div>`).join('')}
+  <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+// ── USUÁRIOS ──
+function renderUsers(){
+  if(curUser.role!=='admin')return;
+  document.getElementById('ul').innerHTML=allUsers.length?allUsers.map(u=>`<div class="urow"><div class="uinfo"><div class="uav">${u.role==='admin'?'👑':'👤'}</div><div><div class="fw6">${u.nome}</div><div class="cm fs12">@${u.username} · <span class="tag ${u.role==='admin'?'tadm':'tusr'}">${u.role==='admin'?'Admin':'Usuário'}</span></div></div></div><div class="flex g8">${u.username!=='administrador'?`<button class="btn bg sm" onclick="toggleRole(${u.id},'${u.role}')">${u.role==='admin'?'⬇️ Tornar Usuário':'⬆️ Tornar Admin'}</button><button class="btn bd sm" onclick="delUser(${u.id},'${u.username}')">🗑️ Excluir</button>`:'<span class="cm fs12">Conta principal</span>'}</div></div>`).join(''):'<p class="cm fs12">Nenhum usuário.</p>';
+  // Admin logado pode criar outro admin — adiciona opção dinamicamente
+  const selR=document.getElementById('nu-r');
+  if(selR&&!selR.querySelector('[value="admin"]')){
+    const o=document.createElement('option');o.value='admin';o.textContent='Administrador';
+    selR.appendChild(o);
+  }
+}
+async function criarUser(){
+  const u=document.getElementById('nu-u').value.trim().toLowerCase();const n=document.getElementById('nu-n').value.trim();const p=document.getElementById('nu-p').value;const r=document.getElementById('nu-r').value;
+  if(!u||!n||!p){showToast('⚠️ Preencha todos os campos!');return;}
+  const{data,error}=await sb.from('usuarios').insert({username:u,nome:n,senha:hs(p),role:r}).select().single();
+  if(error){showToast('❌ '+(error.message.includes('unique')?'Usuário já existe!':error.message));return;}
+  allUsers.push(data);['nu-u','nu-n','nu-p'].forEach(id=>document.getElementById(id).value='');
+  renderUsers();showToast('✅ Usuário criado!');
+}
+async function delUser(id,uname){
+  if(!confirm(`Excluir @${uname} e todos os seus dados?`))return;
+  await sb.from('movimentos').delete().eq('user_id',id);
+  await sb.from('materiais').delete().eq('user_id',id);
+  await sb.from('configuracoes').delete().eq('user_id',id);
+  const{error}=await sb.from('usuarios').delete().eq('id',id);
+  if(error){showToast('❌ '+error.message);return;}
+  allUsers=allUsers.filter(u=>u.id!==id);renderUsers();showToast('🗑️ Usuário removido.');
+}
+
+async function toggleRole(id,currentRole){
+  const novo=currentRole==='admin'?'usuario':'admin';
+  const alvo=allUsers.find(u=>u.id===id);
+  if(!alvo)return;
+  if(!confirm(`Alterar perfil de \"${alvo.nome}\" para ${novo==='admin'?'ADMINISTRADOR':'USUÁRIO'}?`))return;
+  const{data,error}=await sb.from('usuarios').update({role:novo}).eq('id',id).select('id,role').maybeSingle();
+  if(error){showToast('❌ '+error.message);return;}
+  alvo.role=novo;
+  renderUsers();
+  showToast('✅ Perfil atualizado!');
+}
+
+// ── CONFIG ──
+function renderCfg(){
+  document.getElementById('ce').value=cfg.empresa||'MTEC';
+  const _cnpj=document.getElementById('cnpj');if(_cnpj)_cnpj.value=cfg.cnpj||'';
+  const _cend=document.getElementById('cend');if(_cend)_cend.value=cfg.endereco||'';
+  const _ctel=document.getElementById('ctel');if(_ctel)_ctel.value=cfg.telefone||'';
+  document.getElementById('cr').value=cfg.responsavel||'Administrador';
+  document.getElementById('cm').value=cfg.minimo||5;
+  const isAdm=curUser.role==='admin';
+  document.getElementById('lc').innerHTML=cats.map((c,i)=>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd)">
+      <span class="fw6">${c}</span>
+      ${isAdm?`<button class="btn bd sm" onclick="rmCat(${i})">✕</button>`:''}
+    </div>`).join('');
+}
+async function addCat(){const v=document.getElementById('nc').value.trim();if(!v)return;if(cats.includes(v)){showToast('⚠️ Categoria já existe!');return;}cats.push(v);document.getElementById('nc').value='';await saveCfgDB();renderCfg();showToast('✅ Categoria adicionada!');}
+async function rmCat(i){if(mats.some(m=>m.categoria===cats[i])){showToast('⚠️ Há materiais nessa categoria!');return;}cats.splice(i,1);await saveCfgDB();renderCfg();}
+async function saveCfg(){
+  cfg.empresa=document.getElementById('ce').value||'MTEC';
+  cfg.cnpj=(document.getElementById('cnpj')?.value||'').trim();
+  cfg.endereco=(document.getElementById('cend')?.value||'').trim();
+  cfg.telefone=(document.getElementById('ctel')?.value||'').trim();
+  cfg.responsavel=document.getElementById('cr').value||'Administrador';
+  cfg.minimo=Number(document.getElementById('cm').value)||5;
+  await saveCfgDB();showToast('✅ Configurações salvas!');
+}
+async function saveCfgDB(){await sb.from('configuracoes').upsert([{user_id:curUser.id,chave:'config',valor:JSON.stringify(cfg)},{user_id:curUser.id,chave:'cats',valor:JSON.stringify(cats)}],{onConflict:'user_id,chave'});}
+
+// ── EXPORTS ──
+function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];dlCSV([h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])],'mtec_materiais');showToast('✅ CSV exportado!');}
+function dlCSV(data,fn){const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=fn+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.csv';a.click();URL.revokeObjectURL(url);}
+function expJSON(){const b=new Blob([JSON.stringify({mats,movs,cfg,cats},null,2)],{type:'application/json'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download='mtec_backup_'+Date.now()+'.json';a.click();URL.revokeObjectURL(url);showToast('💾 Backup salvo!');}
+function prtInv(){
+  const empresa=cfg.empresa||'MTEC';
+  const base=getMatsVisiveis();
+  const usrLabel=adminMatUser?(allUsers.find(u=>u.id===adminMatUser)?.nome||''):'Todos';
+  const totVal=base.reduce((s,m)=>s+Number(m.qtd)*Number(m.valor),0);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${cfg.empresa||'MTEC'} - Inventário</title><style>${_pdfStyle()}</style></head><body>
+  ${_pdfCabecalho('Inventário Geral de Materiais')}
+    <div class="meta">
+      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
+      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
+      <div>Total: ${base.length} itens</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead>
+    <tbody>${base.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
+  </table>
+  <div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · ${new Date().toLocaleDateString('pt-BR')}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+init();
+</script>
+</body>
+</html>

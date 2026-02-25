@@ -1,0 +1,8 @@
+{
+  "appId": "com.mtec.estoque",
+  "appName": "MTec Estoque",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
