@@ -3,6 +3,15 @@
   "appName": "MTec Estoque",
   "webDir": "www",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "cleartext": true,
+    "allowNavigation": [
+      "*.supabase.co",
+      "*.googleapis.com",
+      "*.jsdelivr.net"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true
   }
 }
