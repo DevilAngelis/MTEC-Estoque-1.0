@@ -209,7 +209,7 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
     </div>
     <div class="hright">
       <div class="ubadge"><span id="h-nome">—</span><span class="rtag" id="h-role">—</span></div>
-      <button class="hbtn" onclick="doLogout()">Trocar usuário</button>
+      <button class="hbtn" onclick="doLogout()">Sair</button>
       <button class="hbtn" onclick="openModal('modal-exp')">📤</button>
     </div>
   </div>
@@ -226,15 +226,17 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page on">
       <div class="g g3 mb20">
-        <div class="card mc glow"><div class="ml">📦 Total de Itens</div><div class="mv g" id="d-tot">—</div><div class="ms">Materiais cadastrados</div></div>
-        <div class="card mc"><div class="ml">⚠️ Estoque Baixo</div><div class="mv o" id="d-bx">—</div><div class="ms">Abaixo do mínimo</div></div>
-        <div class="card mc"><div class="ml">🚫 Zerados</div><div class="mv r" id="d-zt">—</div><div class="ms">Sem estoque</div></div>
+        <div class="card mc glow" style="cursor:pointer" onclick="goPage('materiais',document.querySelector('.nb[onclick*=materiais]'))"><div class="ml">📦 Total de Itens</div><div class="mv g" id="d-tot">—</div><div class="ms">Ver materiais →</div></div>
+        <div class="card mc" style="cursor:pointer" onclick="goPage('materiais',document.querySelector('.nb[onclick*=materiais]'))"><div class="ml">⚠️ Estoque Baixo</div><div class="mv o" id="d-bx">—</div><div class="ms">Ver materiais →</div></div>
+        <div class="card mc" style="cursor:pointer" onclick="goPage('materiais',document.querySelector('.nb[onclick*=materiais]'))"><div class="ml">🚫 Zerados</div><div class="mv r" id="d-zt">—</div><div class="ms">Ver materiais →</div></div>
       </div>
-      <div class="g g2 mb20">
-        <div class="card"><div class="st">📈 Movimentos (7 dias)</div><div class="chart" id="d-chart"></div><div class="flex g10 mt12"><span class="fs12 cg">█ Entradas</span><span class="fs12 cr">█ Saídas</span></div></div>
-        <div class="card"><div class="st">🏆 Mais Movimentados</div><div id="d-top"></div></div>
+      <div class="card mb20">
+        <div class="st">🚨 Alertas de Estoque</div>
+        <div class="sb" style="margin-bottom:12px">
+          <input type="text" id="d-al-q" placeholder="🔍 Buscar material em alerta..." oninput="renderDash()">
+        </div>
+        <div id="d-al"></div>
       </div>
-      <div class="card"><div class="st">🚨 Alertas de Estoque</div><div id="d-al"></div></div>
     </div>
 
     <!-- MATERIAIS -->
@@ -251,11 +253,14 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
       <div class="sb">
         <input type="text" id="b-mat" placeholder="🔍 Buscar material..." oninput="renderMat()">
         <select id="f-cat" onchange="renderMat()" style="width:auto"><option value="">Todas categorias</option></select>
-        <button class="btn bp" onclick="openMatModal()">+ Novo Material</button>
-        <button class="btn bg sm" onclick="prtMat()" title="Imprimir lista de materiais em PDF">🖨️ PDF</button>
+        <button class="btn bp" onclick="openMatModal()">+ Novo</button>
+        <button class="btn bg sm" onclick="prtMat()">🖨️ PDF</button>
+        <button class="btn bg sm" onclick="expCSV()">⬇️ CSV</button>
+        <button class="btn bg sm" onclick="document.getElementById('imp-csv').click()">⬆️ Importar</button>
+        <input type="file" id="imp-csv" accept=".csv" style="display:none" onchange="impCSV(this)">
       </div>
       <div class="card"><div class="tw"><table>
-        <thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Qtd</th><th>Mín</th><th>Un</th><th>Valor Unit.</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Categoria</th><th>Qtd</th><th>Mín</th><th>Un</th><th>Valor Unit.</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="tb-mat"></tbody>
       </table></div></div>
     </div>
@@ -288,57 +293,66 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
           <span id="rel-usr-info" class="fs12 cm"></span>
         </div>
       </div>
+      <!-- Filtro período (usado por todos) -->
       <div class="card mb16">
         <div class="st">🔎 Filtros</div>
         <div class="fr c3" style="margin-bottom:0">
-          <div><label>Tipo</label><select id="rf-tp" onchange="renderRel()"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select></div>
-          <div><label>Produto</label><select id="rf-pr" onchange="renderRel()"><option value="">Todos</option></select></div>
           <div><label>Período</label><select id="rf-pe" onchange="renderRel()"><option value="">Todo período</option><option value="7">7 dias</option><option value="30">30 dias</option><option value="90">90 dias</option></select></div>
+          <div><label>Categoria</label><select id="rf-cat-fil" onchange="renderRel()"><option value="">Todas as categorias</option></select></div>
+          <div><label>Tipo</label><select id="rf-tp" onchange="renderRel()"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select></div>
         </div>
       </div>
-      <div class="g g3 mb16">
+
+      <!-- Cards de relatório -->
+      <div class="g g2 mb16">
         <div class="card">
           <div class="st">📋 Inventário Geral</div>
           <p class="cm fs12 mb12">Lista completa de materiais com status e quantidades.</p>
           <div class="flex g8">
-            <button class="btn bp sm" onclick="prtInv()">🖨️ Imprimir / PDF</button>
+            <button class="btn bp sm" onclick="prtInv()">🖨️ PDF</button>
             <button class="btn bg sm" onclick="expCSV()">⬇️ CSV</button>
           </div>
         </div>
         <div class="card">
-          <div class="st">📥 Relatório de Entradas</div>
+          <div class="st">📥 Entradas</div>
           <p class="cm fs12 mb12">Todas as entradas registradas no período.</p>
           <div class="flex g8">
-            <button class="btn bp sm" onclick="prtMov('entrada')">🖨️ Imprimir / PDF</button>
+            <button class="btn bp sm" onclick="prtMov('entrada')">🖨️ PDF</button>
             <button class="btn bg sm" onclick="expMovFil('entrada')">⬇️ CSV</button>
           </div>
         </div>
         <div class="card">
-          <div class="st">📤 Relatório de Saídas</div>
+          <div class="st">📤 Saídas</div>
           <p class="cm fs12 mb12">Todas as saídas registradas no período.</p>
           <div class="flex g8">
-            <button class="btn bp sm" onclick="prtMov('saida')">🖨️ Imprimir / PDF</button>
+            <button class="btn bp sm" onclick="prtMov('saida')">🖨️ PDF</button>
             <button class="btn bg sm" onclick="expMovFil('saida')">⬇️ CSV</button>
           </div>
         </div>
-      </div>
-      <div class="card mb16">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
-          <div class="st" id="rf-tit" style="margin-bottom:0;flex:1">📊 Movimentos</div>
+        <div class="card">
+          <div class="st">📦 Por Produto</div>
+          <p class="cm fs12 mb12">Movimentos filtrados por produto específico.</p>
+          <div class="fr" style="margin-bottom:10px"><div><select id="rf-pr" onchange="renderRel()"><option value="">Todos os produtos</option></select></div></div>
           <div class="flex g8">
-            <button class="btn bp sm" onclick="prtMov()">🖨️ PDF filtro atual</button>
+            <button class="btn bp sm" onclick="prtMov()">🖨️ PDF</button>
             <button class="btn bg sm" onclick="expMovFil()">⬇️ CSV</button>
           </div>
         </div>
+        <div class="card">
+          <div class="st">🏷️ Por Categoria</div>
+          <p class="cm fs12 mb12">Escolha uma categoria para ver o relatório completo de materiais.</p>
+          <div id="rel-cats-lista"></div>
+        </div>
+      </div>
+
+      <!-- Tabela de movimentos -->
+      <div class="card mb16">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+          <div class="st" id="rf-tit" style="margin-bottom:0;flex:1">📊 Movimentos</div>
+        </div>
         <div class="tw"><table><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Responsável</th><th>Obs</th><th>Saldo</th></tr></thead><tbody id="rf-tb"></tbody></table></div>
       </div>
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
-          <div class="st" style="margin-bottom:0;flex:1">📊 Resumo por Categoria</div>
-          <button class="btn bp sm" onclick="prtCats()">🖨️ PDF Categorias</button>
-        </div>
-        <div id="rf-cat"></div>
-      </div>
+      <div class="card" style="display:none"><div id="rf-cat"></div></div>
     </div>
 
     <!-- USUÁRIOS -->
@@ -406,21 +420,25 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 <div id="modal-mat" class="ov">
   <div class="modal">
     <div class="mhd"><span id="mm-t">📦 Novo Material</span><button class="mc2" onclick="closeModal('modal-mat')">✕</button></div>
-    <div class="fr c2"><div><label>Código</label><input type="text" id="m-cd" placeholder="Ex: MAT001"></div><div><label>Nome *</label><input type="text" id="m-nm" placeholder="Nome do material"></div></div>
+    <input type="hidden" id="m-cd">
+    <div class="fr"><div><label>Nome *</label><input type="text" id="m-nm" placeholder="Nome do material"></div></div>
     <div class="fr c2"><div><label>Categoria</label><select id="m-ct"></select></div><div><label>Unidade</label><select id="m-un"><option>UN</option><option>KG</option><option>LT</option><option>M</option><option>M²</option><option>CX</option><option>PC</option><option>RL</option></select></div></div>
     <div class="fr c3"><div><label>Quantidade</label><input type="number" id="m-qt" value="0" min="0"></div><div><label>Qtd Mínima</label><input type="number" id="m-mn" value="5" min="0"></div><div><label>Valor Unit. (R$)</label><input type="number" id="m-vl" value="0" step="0.01"></div></div>
     <div class="fr c2"><div><label>Localização</label><input type="text" id="m-lc" placeholder="Ex: Prateleira A3"></div><div><label>Fornecedor</label><input type="text" id="m-fn" placeholder="Nome do fornecedor"></div></div>
     <div class="fr"><div><label>Observações</label><textarea id="m-ob" rows="2" placeholder="Notas adicionais..."></textarea></div></div>
-    <div class="fr c2" id="m-owner-row" style="display:none">
-      <div>
-        <label>Usuário dono (apenas admin)</label>
-        <select id="m-owner"></select>
-      </div>
-      <div class="cm fs12" style="align-self:flex-end">
-        <span id="m-owner-help">O material ficará visível apenas para o usuário selecionado.</span>
-      </div>
-    </div>
     <div class="mft"><button class="btn bg" onclick="closeModal('modal-mat')">Cancelar</button><button class="btn bp" id="b-svm" onclick="saveMat()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL USUÁRIO EDITAR -->
+<div id="modal-usr" class="ov">
+  <div class="modal" style="max-width:400px">
+    <div class="mhd"><span>👤 Editar Usuário</span><button class="mc2" onclick="closeModal('modal-usr')">✕</button></div>
+    <input type="hidden" id="eu-id">
+    <div class="fr"><div><label>Nome completo</label><input type="text" id="eu-n" placeholder="Nome completo"></div></div>
+    <div class="fr"><div><label>Nova senha (deixe em branco para manter)</label><input type="password" id="eu-p" placeholder="Nova senha"></div></div>
+    <div class="fr"><div><label>Perfil</label><select id="eu-r"><option value="usuario">Usuário</option><option value="admin">Administrador</option></select></div></div>
+    <div class="mft"><button class="btn bg" onclick="closeModal('modal-usr')">Cancelar</button><button class="btn bp" onclick="salvarUser()">💾 Salvar</button></div>
   </div>
 </div>
 
@@ -459,6 +477,17 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
   </div>
 </div>
 
+<!-- PAINEL RELATÓRIO FULLSCREEN -->
+<div id="pdf-panel" style="display:none;position:fixed;inset:0;z-index:2000;background:#fff;flex-direction:column">
+  <div style="position:fixed;top:0;left:0;right:0;background:#1a1a1a;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:2010;min-height:56px">
+    <span id="pdf-title" style="color:#aaa;font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <button onclick="pdfPrint()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🖨️</button>
+    <button onclick="pdfFechar()" style="background:#cc3300;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">✕ Voltar</button>
+  </div>
+  <div style="height:56px;flex-shrink:0"></div>
+  <iframe id="pdf-frame" style="flex:1;border:none;width:100%;background:#fff"></iframe>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -472,11 +501,39 @@ let editId=null,acIdx=-1,curUser=null,allUsers=[];
 let adminMatUser=null; // null = todos, id = usuário específico (admin)
 let adminRelUser=null;
 
+// ── BACK BUTTON ANDROID ──
+document.addEventListener('backbutton', function(e){
+  e.preventDefault();
+  const panel=document.getElementById('pdf-panel');
+  if(panel&&panel.style.display!=='none'){
+    pdfFechar();
+    return;
+  }
+  // Se estiver no dashboard, minimiza o app
+  // Caso contrário, volta para o dashboard
+  const curPage=localStorage.getItem('mtec_page')||'dashboard';
+  if(curPage==='dashboard'){
+    if(navigator.app) navigator.app.exitApp();
+  } else {
+    const nb=document.querySelector('.nb[onclick*="dashboard"]');
+    goPage('dashboard',nb);
+  }
+}, false);
+
 // ── INIT ──
-function init(){
-  localStorage.removeItem('mtec_u');
-  // Esconder loading imediatamente — sem animação
+async function init(){
   const ls=document.getElementById('ls');
+  ls.style.display='flex';
+  const saved=localStorage.getItem('mtec_u');
+  if(saved){
+    try{
+      curUser=JSON.parse(saved);
+      setMsg('Carregando dados...');
+      await loadData();
+      showApp();
+      return;
+    }catch(e){localStorage.removeItem('mtec_u');}
+  }
   ls.style.display='none';
   document.getElementById('login').classList.add('show');
 }
@@ -534,6 +591,7 @@ async function doLogin(){
 
 function doLogout(){
   localStorage.removeItem('mtec_u');
+  try{localStorage.removeItem('mtec_page');}catch(e){}
   curUser=null;mats=[];movs=[];allUsers=[];adminMatUser=null;adminRelUser=null;
   cfg={empresa:'MTEC',cnpj:'',endereco:'',telefone:'',responsavel:'Administrador',minimo:5};
   cats=['Geral','Elétrico','Hidráulico','Ferramentas','EPI','Escritório'];
@@ -576,9 +634,18 @@ function showApp(){
     cfgSave.style.display='block';
     inputs.forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=false;el.style.opacity='1';}});
   }
+  // Restaurar última página visitada (para quando minimiza e volta)
+  let lastPage='dashboard';
+  try{lastPage=localStorage.getItem('mtec_page')||'dashboard';}catch(e){}
+  // Validar que a página existe e o usuário tem acesso
+  const pagesAdm=['usuarios'];
+  if(pagesAdm.includes(lastPage)&&curUser.role!=='admin') lastPage='dashboard';
+  const validPages=['dashboard','materiais','movimentacoes','relatorios','usuarios','config'];
+  if(!validPages.includes(lastPage)) lastPage='dashboard';
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  const _nb=document.querySelector('.nb');if(_nb)_nb.classList.add('on');
-  goPage('dashboard',_nb);
+  const _nb=document.querySelector('.nb[onclick*="'+lastPage+'"]')||document.querySelector('.nb');
+  if(_nb)_nb.classList.add('on');
+  goPage(lastPage,_nb);
 }
 
 // ── UI ──
@@ -594,6 +661,8 @@ function goPage(p,btn){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   if(btn)btn.classList.add('on');
+  // Salvar última página para retomar ao voltar ao app
+  try{localStorage.setItem('mtec_page',p);}catch(e){}
   if(p==='dashboard')renderDash();
   else if(p==='materiais')renderMat();
   else if(p==='movimentacoes')renderMov();
@@ -611,15 +680,11 @@ function renderDash(){
   document.getElementById('d-tot').textContent=mats.length;
   document.getElementById('d-bx').textContent=mats.filter(m=>m.qtd>0&&m.qtd<=m.minimo).length;
   document.getElementById('d-zt').textContent=mats.filter(m=>m.qtd<=0).length;
-  const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toDateString();});
-  const mx=Math.max(...days.map(ds=>{const e=movs.filter(m=>m.tipo==='entrada'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);const sv=movs.filter(m=>m.tipo==='saida'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);return Math.max(e,sv);}),1);
-  document.getElementById('d-chart').innerHTML=days.map(ds=>{const e=movs.filter(m=>m.tipo==='entrada'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);const sv=movs.filter(m=>m.tipo==='saida'&&new Date(m.created_at).toDateString()===ds).reduce((s,m)=>s+Number(m.qtd),0);return`<div style="flex:1;display:flex;align-items:flex-end;gap:2px;height:100%"><div class="cb" style="height:${Math.max(4,e/mx*100)}%;flex:1" title="Entrada:${e}"></div><div class="cb cbr" style="height:${Math.max(4,sv/mx*100)}%;flex:1" title="Saída:${sv}"></div></div>`;}).join('');
-  const cnt={};movs.forEach(m=>{cnt[m.material_nome]=(cnt[m.material_nome]||0)+Number(m.qtd);});
-  const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,5);const mxt=top.length?top[0][1]:1;
-  document.getElementById('d-top').innerHTML=top.length?top.map(([n,v])=>`<div style="margin-bottom:10px"><div class="flex g10" style="justify-content:space-between;margin-bottom:3px;font-size:12px"><span class="fw6">${n}</span><span class="cg fw7">${v}</span></div><div class="pb"><div class="pf" style="width:${v/mxt*100}%"></div></div></div>`).join(''):'<p class="cm fs12">Nenhuma movimentação ainda.</p>';
-  const al=mats.filter(m=>m.qtd<=m.minimo);
-  document.getElementById('d-al').innerHTML=al.length?`<div class="tw"><table><thead><tr><th>Material</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Status</th></tr></thead><tbody>${al.map(m=>{const s=gst(m);return`<tr><td class="fw6">${m.nome}</td><td class="fw7 ${m.qtd<=0?'cr':'co'}">${m.qtd} ${m.unidade}</td><td class="cm">${m.minimo} ${m.unidade}</td><td><span class="tag ${s.c}">${s.l}</span></td></tr>`;}).join('')}</tbody></table></div>`:'<div class="al as">✅ Todos os itens estão com estoque adequado!</div>';
+  const q=(document.getElementById('d-al-q')?.value||'').toLowerCase();
+  const al=mats.filter(m=>m.qtd<=m.minimo&&(!q||m.nome.toLowerCase().includes(q)||(m.fornecedor||'').toLowerCase().includes(q)));
+  document.getElementById('d-al').innerHTML=al.length?`<div class="tw"><table><thead><tr><th>Material</th><th>Qtd</th><th>Mín</th><th>Status</th><th>Ações</th></tr></thead><tbody>${al.map(m=>{const s=gst(m);return`<tr><td class="fw6" style="cursor:pointer;color:var(--bl)" onclick="verMovMat(${m.id},'${m.nome.replace(/'/g,"\'")}')">${m.nome}<br><span class="cm fs11">${m.categoria}</span></td><td class="fw7 ${m.qtd<=0?'cr':'co'}">${m.qtd} ${m.unidade}</td><td class="cm">${m.minimo}</td><td><span class="tag ${s.c}">${s.l}</span></td><td class="flex g8"><button class="btn bp sm" onclick="openMovModal('entrada')" title="Entrada rápida">📥</button><button class="btn bg sm" onclick="editMat(${m.id})" title="Editar cadastro">✏️</button></td></tr>`;}).join('')}</tbody></table></div>`:'<div class="al as">✅ Todos os itens estão com estoque adequado!</div>';
 }
+
 
 // ── MATERIAIS ──
 function getMatsVisiveis(){
@@ -641,7 +706,7 @@ function renderMat(){
   const q=(document.getElementById('b-mat')?.value||'').toLowerCase();const cat=document.getElementById('f-cat')?.value||'';
   const base=getMatsVisiveis();
   const fil=base.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q)||(m.fornecedor||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
-  document.getElementById('tb-mat').innerHTML=fil.length?fil.map(m=>{const s=gst(m);return`<tr><td class="cm fs11">${m.codigo||'-'}</td><td class="fw6">${m.nome}${m.local?`<br><span class="cm fs11">📍 ${m.local}</span>`:''}${m.fornecedor?`<br><span class="cm fs11">🏭 ${m.fornecedor}</span>`:''}</td><td class="cb2 fs12">${m.categoria}</td><td class="fw7 ${m.qtd<=0?'cr':m.qtd<=m.minimo?'co':'cg'}">${m.qtd}</td><td class="cm">${m.minimo}</td><td class="cm fs12">${m.unidade}</td><td>${fm(m.valor)}</td><td><span class="tag ${s.c}">${s.l}</span></td><td><div class="flex g8"><button class="btn bg sm" onclick="editMat(${m.id})">✏️</button><button class="btn bd sm" onclick="delMat(${m.id})">🗑️</button></div></td></tr>`;}).join(''):`<tr><td colspan="9"><div class="empty">Nenhum material encontrado.</div></td></tr>`;
+  document.getElementById('tb-mat').innerHTML=fil.length?fil.map(m=>{const s=gst(m);return`<tr><td class="fw6">${m.nome}${m.local?`<br><span class="cm fs11">📍 ${m.local}</span>`:''}${m.fornecedor?`<br><span class="cm fs11">🏭 ${m.fornecedor}</span>`:''}</td><td class="cb2 fs12">${m.categoria}</td><td class="fw7 ${m.qtd<=0?'cr':m.qtd<=m.minimo?'co':'cg'}">${m.qtd}</td><td class="cm">${m.minimo}</td><td class="cm fs12">${m.unidade}</td><td>${fm(m.valor)}</td><td><span class="tag ${s.c}">${s.l}</span></td><td><div class="flex g8"><button class="btn bg sm" onclick="editMat(${m.id})">✏️</button><button class="btn bd sm" onclick="delMat(${m.id})">🗑️</button></div></td></tr>`;}).join(''):`<tr><td colspan="9"><div class="empty">Nenhum material encontrado.</div></td></tr>`;
 }
 
 function prtMat(){
@@ -664,9 +729,9 @@ function prtMat(){
     <tbody>${fil.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
   </table>
   <div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  <script>window.onload=()=>{window.print();}<\/script>
+  
   </body></html>`;
-  const w=window.open('','_blank');w.document.write(html);w.document.close();
+  pdfAbrir(html,'📄 Relatório de Materiais');
 }
 
 function fillCats(id,val){document.getElementById(id).innerHTML=cats.map(c=>`<option value="${c}"${c===val?' selected':''}>${c}</option>`).join('');}
@@ -676,18 +741,7 @@ function openMatModal(){
   ['m-cd','m-nm','m-lc','m-fn','m-ob'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('m-qt').value=0;document.getElementById('m-mn').value=cfg.minimo||5;
   document.getElementById('m-vl').value=0;document.getElementById('m-un').value='UN';
-  fillCats('m-ct','Geral');
-  const ownerRow=document.getElementById('m-owner-row');
-  const ownerSel=document.getElementById('m-owner');
-  if(ownerRow&&ownerSel){
-    if(curUser&&curUser.role==='admin'){
-      ownerRow.style.display='grid';
-      ownerSel.innerHTML=allUsers.map(u=>`<option value="${u.id}"${u.id===curUser.id?' selected':''}>${u.nome} (@${u.username})</option>`).join('');
-    }else{
-      ownerRow.style.display='none';
-    }
-  }
-  openModal('modal-mat');
+  fillCats('m-ct','Geral');openModal('modal-mat');
 }
 
 function editMat(id){
@@ -698,28 +752,13 @@ function editMat(id){
   document.getElementById('m-vl').value=m.valor;document.getElementById('m-un').value=m.unidade;
   document.getElementById('m-lc').value=m.local||'';document.getElementById('m-fn').value=m.fornecedor||'';
   document.getElementById('m-ob').value=m.obs||'';fillCats('m-ct',m.categoria);
-  const ownerRow=document.getElementById('m-owner-row');
-  const ownerSel=document.getElementById('m-owner');
-  if(ownerRow&&ownerSel){
-    if(curUser&&curUser.role==='admin'){
-      ownerRow.style.display='grid';
-      ownerSel.innerHTML=allUsers.map(u=>`<option value="${u.id}"${u.id===m.user_id?' selected':''}>${u.nome} (@${u.username})</option>`).join('');
-    }else{
-      ownerRow.style.display='none';
-    }
-  }
   openModal('modal-mat');
 }
 
 async function saveMat(){
   const nome=document.getElementById('m-nm').value.trim();if(!nome){showToast('⚠️ Nome é obrigatório!');return;}
   const btn=document.getElementById('b-svm');btn.disabled=true;btn.textContent='⏳...';
-  let ownerId=curUser.id;
-  const ownerSel=document.getElementById('m-owner');
-  if(curUser&&curUser.role==='admin'&&ownerSel&&ownerSel.value){
-    ownerId=Number(ownerSel.value)||curUser.id;
-  }
-  const pl={user_id:ownerId,codigo:document.getElementById('m-cd').value.trim()||('MAT'+Date.now()),nome,categoria:document.getElementById('m-ct').value,unidade:document.getElementById('m-un').value,qtd:Number(document.getElementById('m-qt').value)||0,minimo:Number(document.getElementById('m-mn').value)||0,valor:Number(document.getElementById('m-vl').value)||0,local:document.getElementById('m-lc').value.trim(),fornecedor:document.getElementById('m-fn').value.trim(),obs:document.getElementById('m-ob').value.trim()};
+  const pl={user_id:curUser.id,codigo:document.getElementById('m-cd').value.trim()||('MAT'+Date.now()),nome,categoria:document.getElementById('m-ct').value,unidade:document.getElementById('m-un').value,qtd:Number(document.getElementById('m-qt').value)||0,minimo:Number(document.getElementById('m-mn').value)||0,valor:Number(document.getElementById('m-vl').value)||0,local:document.getElementById('m-lc').value.trim(),fornecedor:document.getElementById('m-fn').value.trim(),obs:document.getElementById('m-ob').value.trim()};
   let err;
   if(editId){const r=await sb.from('materiais').update(pl).eq('id',editId);err=r.error;if(!err){const i=mats.findIndex(x=>x.id===editId);if(i>=0)mats[i]={...mats[i],...pl};}}
   else{const r=await sb.from('materiais').insert(pl).select().single();err=r.error;if(!err)mats.push(r.data);}
@@ -769,6 +808,16 @@ function acKey(e){
   if(acIdx>=0)its[acIdx].scrollIntoView({block:'nearest'});
 }
 document.addEventListener('click',e=>{if(!e.target.closest('.acw')){const l=document.getElementById('mv-ac');if(l)l.style.display='none';}});
+
+// ── VER MOVIMENTAÇÕES DO MATERIAL ──
+function verMovMat(id, nome){
+  const nb=document.querySelector('.nb[onclick*="movimentacoes"]');
+  goPage('movimentacoes', nb);
+  setTimeout(()=>{
+    const inp=document.getElementById('b-mov');
+    if(inp){inp.value=nome;renderMov();}
+  }, 100);
+}
 
 // ── MOVIMENTAÇÕES ──
 function openMovModal(tipo){
@@ -827,15 +876,25 @@ function onRelUsrChange(){
 
 function getFilMov(){
   const tp=document.getElementById('rf-tp')?.value||'';const pr=Number(document.getElementById('rf-pr')?.value||0);const pe=Number(document.getElementById('rf-pe')?.value||0);
+  const catFil=document.getElementById('rf-cat-fil')?.value||'';
   const lim=pe?new Date(Date.now()-pe*86400000):null;
   const base=getMovsVisiveis();
-  return base.filter(m=>(!tp||m.tipo===tp)&&(!pr||m.material_id===pr)&&(!lim||new Date(m.created_at)>=lim));
+  return base.filter(m=>{
+    if(tp&&m.tipo!==tp)return false;
+    if(pr&&m.material_id!==pr)return false;
+    if(lim&&new Date(m.created_at)<lim)return false;
+    if(catFil){const mat=mats.find(x=>x.id===m.material_id);if(!mat||mat.categoria!==catFil)return false;}
+    return true;
+  });
 }
 
 function renderRel(){
   const sp=document.getElementById('rf-pr');
   if(sp){const cv=sp.value;const base=getMovsVisiveis();const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;sp.innerHTML='<option value="">Todos</option>'+uMats.map(m=>`<option value="${m.id}"${String(m.id)===cv?' selected':''}>${m.nome}</option>`).join('');if(cv)sp.value=cv;}
-  const fil=getFilMov();const tp=document.getElementById('rf-tp')?.value||'';
+  // Popular select de categoria
+  const sc=document.getElementById('rf-cat-fil');
+  if(sc){const cv2=sc.value;sc.innerHTML='<option value="">Todas as categorias</option>'+cats.map(ct=>`<option value="${ct}"${ct===cv2?' selected':''}>${ct}</option>`).join('');if(cv2)sc.value=cv2;}
+  const fil=getFilMov();const tp='';
   let t='📊 ';if(tp==='entrada')t+='Entradas';else if(tp==='saida')t+='Saídas';else t+='Todos os Movimentos';
   const te=document.getElementById('rf-tit');if(te)te.textContent=t;
   const tb=document.getElementById('rf-tb');
@@ -843,9 +902,32 @@ function renderRel(){
   const uMats2=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
   const ct={};uMats2.forEach(m=>{if(!ct[m.categoria])ct[m.categoria]={n:0,v:0,b:0};ct[m.categoria].n++;ct[m.categoria].v+=Number(m.qtd)*Number(m.valor);if(m.qtd<=m.minimo)ct[m.categoria].b++;});
   const rc=document.getElementById('rf-cat');if(rc)rc.innerHTML=Object.entries(ct).map(([c,d])=>`<div style="display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap"><span class="fw7 cb2" style="min-width:110px">${c}</span><span class="cm fs12">${d.n} itens</span><span class="cg fw7">${fm(d.v)}</span>${d.b?`<span class="tag tlo">${d.b} alerta${d.b>1?'s':''}</span>`:''}</div>`).join('')||'<p class="cm fs12">Sem dados.</p>';
+  // Lista de categorias clicáveis
+  const rl=document.getElementById('rel-cats-lista');
+  if(rl)rl.innerHTML=cats.map(cat=>{const n=mats.filter(m=>m.categoria===cat).length;return`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bd);cursor:pointer" onclick="prtCatIndividual('${cat.replace(/'/g,"\\'")}')"><span class="fw6">${cat}</span><div class="flex g8"><span class="cm fs12">${n} itens</span><span class="cg fs12">🖨️ PDF →</span></div></div>`;}).join('')||'<p class="cm fs12">Nenhuma categoria.</p>';
 }
 
 function expMovFil(tf){const d=tf?getMovsVisiveis().filter(m=>m.tipo===tf):getFilMov();dlCSV([['Data','Tipo','Material','Qtd','Responsavel','Obs','Saldo'],...d.map(m=>[fd(m.created_at),m.tipo,m.material_nome,m.qtd,m.responsavel,m.obs,m.saldo])],`mtec_${tf||'movimentos'}`);showToast('✅ CSV exportado!');}
+
+// ── PDF PANEL ──
+function pdfAbrir(html, titulo){
+  const panel=document.getElementById('pdf-panel');
+  const frame=document.getElementById('pdf-frame');
+  document.getElementById('pdf-title').textContent=titulo;
+  panel.style.display='flex';
+  // Escrever HTML no iframe
+  const doc=frame.contentDocument||frame.contentWindow.document;
+  doc.open();doc.write(html);doc.close();
+}
+function pdfFechar(){
+  document.getElementById('pdf-panel').style.display='none';
+  const frame=document.getElementById('pdf-frame');
+  const doc=frame.contentDocument||frame.contentWindow.document;
+  doc.open();doc.write('');doc.close();
+}
+function pdfPrint(){
+  document.getElementById('pdf-frame').contentWindow.print();
+}
 
 function _pdfCabecalho(titulo){
   const e=cfg.empresa||'MTEC';
@@ -858,11 +940,24 @@ function _pdfCabecalho(titulo){
     </div>`;
 }
 function _pdfStyle(){
-  return `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #00aa33}.hdr h1{font-size:18px;color:#00aa33;font-weight:800}.hdr .meta{text-align:right;font-size:10px;color:#666}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#00aa33;color:#fff;padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px}td{padding:6px 9px;border-bottom:1px solid #e8e8e8}tr:nth-child(even) td{background:#fafafa}.in{color:#0077cc;font-weight:700}.out{color:#cc3300;font-weight:700}.ok{color:#00aa33}.lo{color:#ff8c00}.ot{color:#ff4444}.ftr{margin-top:16px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px}@media print{body{padding:10px}@page{margin:15mm}}`;
+  return `*{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #00aa33}
+  .hdr h1{font-size:18px;color:#00aa33;font-weight:800}
+  .hdr .meta{text-align:right;font-size:10px;color:#666}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{background:#00aa33;color:#fff;padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+  td{padding:6px 9px;border-bottom:1px solid #e8e8e8}
+  tr:nth-child(even) td{background:#fafafa}
+  .in{color:#0077cc;font-weight:700}.out{color:#cc3300;font-weight:700}
+  .ok{color:#00aa33}.lo{color:#ff8c00}.ot{color:#ff4444}
+  .ftr{margin-top:16px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px}
+  @media print{@page{margin:15mm}}`;
 }
 
 function prtMov(tf){
   const empresa=cfg.empresa||'MTEC';
+  const catFil=document.getElementById('rf-cat-fil')?.value||'';
   const d=tf?getMovsVisiveis().filter(m=>m.tipo===tf):getFilMov();
   const tit=tf==='entrada'?'Entradas':tf==='saida'?'Saídas':'Movimentos';
   const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
@@ -873,7 +968,7 @@ function prtMov(tf){
     <div class="meta">
       <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
       ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${d.length} registros${!tf?` | ▲ ${totE} entradas / ▼ ${totS} saídas`:''}</div>
+      <div>Total: ${d.length} registros${!tf?` | ▲ ${totE} entradas / ▼ ${totS} saídas`:''}${catFil?' · Categoria: '+catFil:''}</div>
     </div>
   </div>
   <table>
@@ -881,52 +976,95 @@ function prtMov(tf){
     <tbody>${d.map(m=>`<tr><td>${fd(m.created_at)}</td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</td><td><strong>${m.material_nome||''}</strong></td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td>${m.responsavel||'-'}</td><td>${m.obs||'-'}</td><td><strong>${m.saldo??'-'}</strong></td></tr>`).join('')}</tbody>
   </table>
   <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  <script>window.onload=()=>{window.print();}<\/script>
+  
   </body></html>`;
-  const w=window.open('','_blank');w.document.write(html);w.document.close();
+  pdfAbrir(html,'📊 Relatório de ' + tit);
+}
+
+function prtCatIndividual(cat){
+  const empresa=cfg.empresa||'MTEC';
+  const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
+  const itens=uMats.filter(m=>m.categoria===cat);
+  const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - ${cat}</title><style>${_pdfStyle()}</style></head><body>
+  ${_pdfCabecalho('Categoria: ' + cat)}
+    <div class="meta">
+      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
+      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
+      <div>Total: ${itens.length} itens na categoria</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Nome</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Localização</th><th>Status</th></tr></thead>
+    <tbody>${itens.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong>${m.obs?`<br><small style="color:#888">${m.obs}</small>`:''}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td>${m.local||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
+  </table>
+  <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
+  </body></html>`;
+  pdfAbrir(html,'🏷️ Categoria: ' + cat);
 }
 
 function prtCats(){
   const empresa=cfg.empresa||'MTEC';
+  const catFil=document.getElementById('rf-cat-fil')?.value||'';
   const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
-  const ct={};uMats.forEach(m=>{if(!ct[m.categoria])ct[m.categoria]={n:0,v:0,b:0,ze:0};ct[m.categoria].n++;ct[m.categoria].v+=Number(m.qtd)*Number(m.valor);if(m.qtd<=0)ct[m.categoria].ze++;else if(m.qtd<=m.minimo)ct[m.categoria].b++;});
+  const filtered=catFil?uMats.filter(m=>m.categoria===catFil):uMats;
+  // Agrupar materiais por categoria
+  const grupos={};filtered.forEach(m=>{if(!grupos[m.categoria])grupos[m.categoria]=[];grupos[m.categoria].push(m);});
   const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - Categorias</title><style>${_pdfStyle()}
-  .cat-row{display:flex;gap:20px;padding:10px 0;border-bottom:1px solid #eee;align-items:center}
-  .cat-name{font-weight:700;color:#0055aa;min-width:140px;font-size:12px}
-  .cat-val{color:#00aa33;font-weight:700}
-  .cat-alert{color:#ff8c00;font-size:10px;font-weight:600}
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - Por Categoria</title><style>${_pdfStyle()}
+  .cat-titulo{background:#0055aa;color:#fff;padding:8px 12px;font-size:12px;font-weight:700;margin-top:18px;border-radius:4px 4px 0 0}
+  .cat-titulo:first-child{margin-top:0}
   </style></head><body>
-  ${_pdfCabecalho('Resumo por Categoria')}
+  ${_pdfCabecalho('Relatório por Categoria')}
     <div class="meta">
       <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
       ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${uMats.length} itens · ${Object.keys(ct).length} categorias</div>
+      <div>Total: ${filtered.length} itens${catFil?' · Categoria: '+catFil:''}</div>
     </div>
   </div>
-  ${Object.entries(ct).map(([c,d])=>`<div class="cat-row">
-    <span class="cat-name">${c}</span>
-    <span>${d.n} itens</span>
-    <span class="cat-val">R$ ${d.v.toFixed(2).replace('.',',')}</span>
-    ${d.b?`<span class="cat-alert">⚠️ ${d.b} estoque baixo</span>`:''}
-    ${d.ze?`<span style="color:#ff4444;font-size:10px;font-weight:600">🚫 ${d.ze} zerado(s)</span>`:''}
-  </div>`).join('')}
+  ${Object.entries(grupos).map(([cat,itens])=>`
+    <div class="cat-titulo">🏷️ ${cat} — ${itens.length} itens</div>
+    <table>
+      <thead><tr><th>Nome</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead>
+      <tbody>${itens.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
+    </table>
+  `).join('')}
   <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`;
-  const w=window.open('','_blank');w.document.write(html);w.document.close();
+  pdfAbrir(html,'🏷️ Relatório por Categoria');
 }
 
 // ── USUÁRIOS ──
 function renderUsers(){
   if(curUser.role!=='admin')return;
-  document.getElementById('ul').innerHTML=allUsers.length?allUsers.map(u=>`<div class="urow"><div class="uinfo"><div class="uav">${u.role==='admin'?'👑':'👤'}</div><div><div class="fw6">${u.nome}</div><div class="cm fs12">@${u.username} · <span class="tag ${u.role==='admin'?'tadm':'tusr'}">${u.role==='admin'?'Admin':'Usuário'}</span></div></div></div><div class="flex g8">${u.username!=='administrador'?`<button class="btn bg sm" onclick="toggleRole(${u.id},'${u.role}')">${u.role==='admin'?'⬇️ Tornar Usuário':'⬆️ Tornar Admin'}</button><button class="btn bd sm" onclick="delUser(${u.id},'${u.username}')">🗑️ Excluir</button>`:'<span class="cm fs12">Conta principal</span>'}</div></div>`).join(''):'<p class="cm fs12">Nenhum usuário.</p>';
+  document.getElementById('ul').innerHTML=allUsers.length?allUsers.map(u=>`<div class="urow"><div class="uinfo" style="cursor:pointer" onclick="abrirEditUser(${JSON.stringify(u).replace(/'/g,'\\'')})"><div class="uav">${u.role==='admin'?'👑':'👤'}</div><div><div class="fw6">${u.nome}</div><div class="cm fs12">@${u.username} · <span class="tag ${u.role==='admin'?'tadm':'tusr'}">${u.role==='admin'?'Admin':'Usuário'}</span></div></div></div><div class="flex g8"><button class="btn bg sm" onclick="abrirEditUser(${JSON.stringify(u).replace(/'/g,'\\'')})">✏️</button>${u.username!=='administrador'?`<button class="btn bd sm" onclick="delUser(${u.id},'${u.username}')">🗑️</button>`:'<span class="cm fs12">Principal</span>'}</div></div>`).join(''):'<p class="cm fs12">Nenhum usuário.</p>';
   // Admin logado pode criar outro admin — adiciona opção dinamicamente
   const selR=document.getElementById('nu-r');
   if(selR&&!selR.querySelector('[value="admin"]')){
     const o=document.createElement('option');o.value='admin';o.textContent='Administrador';
     selR.appendChild(o);
   }
+}
+function abrirEditUser(u){
+  document.getElementById('eu-id').value=u.id;
+  document.getElementById('eu-n').value=u.nome;
+  document.getElementById('eu-p').value='';
+  document.getElementById('eu-r').value=u.role;
+  openModal('modal-usr');
+}
+async function salvarUser(){
+  const id=Number(document.getElementById('eu-id').value);
+  const n=document.getElementById('eu-n').value.trim();
+  const p=document.getElementById('eu-p').value;
+  const r=document.getElementById('eu-r').value;
+  if(!n){showToast('⚠️ Nome obrigatório');return;}
+  const pl={nome:n,role:r};
+  if(p){if(p.length<4){showToast('⚠️ Senha mín. 4 caracteres');return;}pl.senha=hs(p);}
+  const{error}=await sb.from('usuarios').update(pl).eq('id',id);
+  if(error){showToast('❌ '+error.message);return;}
+  const u=allUsers.find(x=>x.id===id);
+  if(u){u.nome=n;u.role=r;}
+  closeModal('modal-usr');renderUsers();showToast('✅ Usuário atualizado!');
 }
 async function criarUser(){
   const u=document.getElementById('nu-u').value.trim().toLowerCase();const n=document.getElementById('nu-n').value.trim();const p=document.getElementById('nu-p').value;const r=document.getElementById('nu-r').value;
@@ -944,18 +1082,6 @@ async function delUser(id,uname){
   const{error}=await sb.from('usuarios').delete().eq('id',id);
   if(error){showToast('❌ '+error.message);return;}
   allUsers=allUsers.filter(u=>u.id!==id);renderUsers();showToast('🗑️ Usuário removido.');
-}
-
-async function toggleRole(id,currentRole){
-  const novo=currentRole==='admin'?'usuario':'admin';
-  const alvo=allUsers.find(u=>u.id===id);
-  if(!alvo)return;
-  if(!confirm(`Alterar perfil de \"${alvo.nome}\" para ${novo==='admin'?'ADMINISTRADOR':'USUÁRIO'}?`))return;
-  const{data,error}=await sb.from('usuarios').update({role:novo}).eq('id',id).select('id,role').maybeSingle();
-  if(error){showToast('❌ '+error.message);return;}
-  alvo.role=novo;
-  renderUsers();
-  showToast('✅ Perfil atualizado!');
 }
 
 // ── CONFIG ──
@@ -986,13 +1112,89 @@ async function saveCfg(){
 }
 async function saveCfgDB(){await sb.from('configuracoes').upsert([{user_id:curUser.id,chave:'config',valor:JSON.stringify(cfg)},{user_id:curUser.id,chave:'cats',valor:JSON.stringify(cats)}],{onConflict:'user_id,chave'});}
 
+// ── IMPORTAÇÃO CSV ──
+function impCSV(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const lines=e.target.result.split('
+').filter(l=>l.trim());
+    if(lines.length<2){showToast('⚠️ CSV vazio ou inválido');return;}
+    const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+    let imp=0,err=0;
+    for(let i=1;i<lines.length;i++){
+      const vals=lines[i].match(/(".*?"|[^,]+)/g)||[];
+      const v=vals.map(x=>x.replace(/^"|"$/g,'').trim());
+      const nome=v[headers.indexOf('nome')]||v[1]||'';
+      if(!nome)continue;
+      const pl={
+        user_id:curUser.id,
+        codigo:v[headers.indexOf('codigo')]||v[0]||('MAT'+Date.now()+i),
+        nome,
+        categoria:v[headers.indexOf('categoria')]||v[2]||cats[0]||'Geral',
+        qtd:Number(v[headers.indexOf('quantidade')]||v[3])||0,
+        unidade:v[headers.indexOf('unidade')]||v[4]||'UN',
+        minimo:Number(v[headers.indexOf('minimo')]||v[5])||cfg.minimo||5,
+        valor:Number(v[headers.indexOf('valor unit.')]||v[6])||0,
+        local:v[headers.indexOf('localizacao')]||v[9]||'',
+        fornecedor:v[headers.indexOf('fornecedor')]||v[10]||'',
+        obs:''
+      };
+      const{data,error}=await sb.from('materiais').insert(pl).select().single();
+      if(!error&&data){mats.push(data);imp++;}else{err++;}
+    }
+    input.value='';
+    renderMat();renderDash();
+    showToast(`✅ ${imp} importados${err?', '+err+' erros':''}`);
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
 // ── EXPORTS ──
-function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];dlCSV([h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])],'mtec_materiais');showToast('✅ CSV exportado!');}
-function dlCSV(data,fn){const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=fn+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.csv';a.click();URL.revokeObjectURL(url);}
-function expJSON(){const b=new Blob([JSON.stringify({mats,movs,cfg,cats},null,2)],{type:'application/json'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download='mtec_backup_'+Date.now()+'.json';a.click();URL.revokeObjectURL(url);showToast('💾 Backup salvo!');}
+function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];const rows=[h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])];const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,'mtec_materiais.csv','text/csv;charset=utf-8;');showToast('✅ CSV exportado!');}
+async function dlArquivo(conteudo, nomeArquivo, mime){
+  const nomeFinal=nomeArquivo+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  // Capacitor (Android APK)
+  if(window.Capacitor&&window.Capacitor.isNativePlatform()){
+    try{
+      const{Filesystem,Directory}=await Promise.all([
+        import('@capacitor/filesystem').then(m=>m.Filesystem),
+        import('@capacitor/filesystem').then(m=>m.Directory)
+      ]);
+      // Converter para base64
+      const b64=btoa(unescape(encodeURIComponent(conteudo)));
+      await Filesystem.writeFile({path:nomeFinal,data:b64,directory:Directory.Documents,encoding:'base64'});
+      showToast('✅ Salvo em: Documentos/'+nomeFinal);
+    }catch(e){
+      // Fallback: abrir em nova aba para o usuário salvar manualmente
+      const blob=new Blob([conteudo],{type:mime});
+      const url=URL.createObjectURL(blob);
+      window.open(url,'_blank');
+      showToast('✅ Arquivo gerado — salve manualmente');
+    }
+    return;
+  }
+  // PC / Navegador normal
+  const b=new Blob(['\ufeff'+conteudo],{type:mime});
+  const url=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=url;a.download=nomeFinal;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+}
+function dlCSV(data,fn){
+  const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  dlArquivo(csv,fn+'.csv','text/csv;charset=utf-8;');
+}
+function expJSON(){
+  dlArquivo(JSON.stringify({mats,movs,cfg,cats},null,2),'mtec_backup_'+Date.now()+'.json','application/json');
+  showToast('💾 Backup salvo!');
+}
 function prtInv(){
   const empresa=cfg.empresa||'MTEC';
-  const base=getMatsVisiveis();
+  const catFil=document.getElementById('rf-cat-fil')?.value||'';
+  const allBase=getMatsVisiveis();
+  const base=catFil?allBase.filter(m=>m.categoria===catFil):allBase;
   const usrLabel=adminMatUser?(allUsers.find(u=>u.id===adminMatUser)?.nome||''):'Todos';
   const totVal=base.reduce((s,m)=>s+Number(m.qtd)*Number(m.valor),0);
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${cfg.empresa||'MTEC'} - Inventário</title><style>${_pdfStyle()}</style></head><body>
@@ -1000,7 +1202,7 @@ function prtInv(){
     <div class="meta">
       <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
       ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${base.length} itens</div>
+      <div>Total: ${base.length} itens${catFil?' · Categoria: '+catFil:''}</div>
     </div>
   </div>
   <table>
@@ -1008,9 +1210,9 @@ function prtInv(){
     <tbody>${base.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
   </table>
   <div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  <script>window.onload=()=>{window.print();}<\/script>
+  
   </body></html>`;
-  const w=window.open('','_blank');w.document.write(html);w.document.close();
+  pdfAbrir(html,'📋 Inventário Geral');
 }
 
 init();
