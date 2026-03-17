@@ -529,10 +529,11 @@ async function init(){
     try{
       curUser=JSON.parse(saved);
       setMsg('Carregando dados...');
-      await loadData();
+      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+      await Promise.race([loadData(),timeout]);
       showApp();
       return;
-    }catch(e){localStorage.removeItem('mtec_u');}
+    }catch(e){localStorage.removeItem('mtec_u');curUser=null;}
   }
   ls.style.display='none';
   document.getElementById('login').classList.add('show');
