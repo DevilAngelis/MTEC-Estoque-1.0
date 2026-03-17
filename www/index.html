@@ -571,7 +571,15 @@ async function doLogin(){
   const p=document.getElementById('lp').value;
   if(!u||!p){showErr('Preencha usuário e senha.');return;}
   const btn=document.getElementById('btn-li');btn.disabled=true;btn.textContent='Entrando...';
-  const{data,error}=await sb.from('usuarios').select('*').eq('username',u).maybeSingle();
+  let data,error;
+  try{
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+    const result=await Promise.race([sb.from('usuarios').select('*').eq('username',u).maybeSingle(),timeout]);
+    data=result.data;error=result.error;
+  }catch(e){
+    btn.disabled=false;btn.textContent='Entrar';
+    showErr('Sem conexão. Verifique sua internet.');return;
+  }
   btn.disabled=false;btn.textContent='Entrar';
   if(error){
     if(error.message.includes('relation')||error.code==='42P01'){
