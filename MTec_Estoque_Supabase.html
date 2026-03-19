@@ -531,7 +531,9 @@ document.addEventListener('backbutton', function(e){
 async function init(){
   const ls=document.getElementById('ls');
   ls.style.display='flex';
+  setMsg('Iniciando...');
   const saved=localStorage.getItem('mtec_u');
+  setMsg(saved?'Sessão encontrada...':'Sem sessão, abrindo login...');
   if(saved){
     try{
       curUser=JSON.parse(saved);
