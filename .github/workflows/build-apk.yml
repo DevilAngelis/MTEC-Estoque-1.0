@@ -10,78 +10,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. Checkout ────────────────────────────────────────────────────────
-      - name: Checkout repositório
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ── 2. Java 21 (mesmo usado localmente no Temurin) ─────────────────────
-      - name: Configurar Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      # ── 3. Node 20 ─────────────────────────────────────────────────────────
-      - name: Configurar Node 20
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
-      # ── 4. Instalar dependências npm ────────────────────────────────────────
-      - name: Instalar dependências
+      # Instala dependências
+      - name: Instalar dependencias
         run: npm install --legacy-peer-deps --ignore-scripts
 
-      # ── 5. CRÍTICO: copiar HTML para www/index.html ANTES do cap sync ───────
-      #    O copy-web.js faz exatamente isso; sem este passo o APK abre tela branca.
-      - name: Preparar www/ (copy-web.js)
+      # CRÍTICO: gera www/index.html antes do cap sync
+      # Sem este passo o APK abre tela branca
+      - name: Preparar www
         run: node copy-web.js
 
-      # ── 6. Verificação de segurança: garantir que www/index.html existe ─────
       - name: Verificar www/index.html
         run: |
           if [ ! -f "www/index.html" ]; then
-            echo "❌ ERRO: www/index.html não foi gerado pelo copy-web.js"
+            echo "ERRO: www/index.html nao foi gerado"
             exit 1
           fi
-          echo "✅ www/index.html OK — $(wc -c < www/index.html) bytes"
+          echo "OK: www/index.html - $(wc -c < www/index.html) bytes"
 
-      # ── 7. Sincronizar Capacitor com Android ────────────────────────────────
-      - name: Sync Capacitor → Android
+      - name: Sync Capacitor
         run: npx cap sync android
 
-      # ── 8. Permissão de execução no Gradle wrapper ──────────────────────────
-      - name: Permissão gradlew
+      - name: Permissao gradlew
         run: chmod +x android/gradlew
 
-      # ── 9. Gerar keystore a partir do secret (base64) ───────────────────────
+      # Keystore vem do secret KEYSTORE_BASE64
+      # O build.gradle lê KEYSTORE_PASSWORD, KEY_ALIAS e KEY_PASSWORD via System.getenv()
+      # Fallback hardcoded no build.gradle: mtec1234 / mtec
       - name: Criar keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/mtec-release.keystore
 
-      # ── 10. Criar local.properties com caminho do Android SDK ───────────────
-      - name: Criar local.properties
+      - name: local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      # ── 11. Build APK Release assinado ──────────────────────────────────────
-      - name: Build APK Release
+      - name: Build APK
         run: cd android && ./gradlew assembleRelease
         env:
-          KEYSTORE_PATH: app/mtec-release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      # ── 12. Verificar se o APK foi gerado ───────────────────────────────────
-      - name: Verificar APK gerado
+      - name: Verificar APK
         run: |
-          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
-          if [ ! -f "$APK_PATH" ]; then
-            echo "❌ ERRO: APK não encontrado em $APK_PATH"
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK" ]; then
+            echo "ERRO: APK nao encontrado"
             exit 1
           fi
-          echo "✅ APK gerado — $(du -h $APK_PATH | cut -f1)"
+          echo "OK: APK gerado - $(du -h $APK | cut -f1)"
 
-      # ── 13. Upload do artefato (30 dias de retenção) ────────────────────────
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
