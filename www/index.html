@@ -27,21 +27,32 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;font-s
 @keyframes la{0%{width:0}60%{width:80%}100%{width:100%}}
 .lt{color:var(--mt);font-size:12px}
 
-/* LOGIN */
-#login{display:none;position:fixed;inset:0;background:var(--bg);z-index:8000;align-items:center;justify-content:center;padding:20px}
+/* LOGIN / CADASTRO */
+#login{display:none;position:fixed;inset:0;background:var(--bg);z-index:8000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 #login.show{display:flex}
-.lbox{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.llogo{text-align:center;margin-bottom:28px}
+.lbox{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:36px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.llogo{text-align:center;margin-bottom:24px}
 .llogo .icon{font-size:38px;display:block;margin-bottom:8px}
 .llogo h1{font-size:20px;font-weight:800;color:var(--green)}
 .llogo p{font-size:12px;color:var(--mt);margin-top:3px}
-.ltabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:22px}
+.ltabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:20px}
 .ltab{flex:1;padding:8px;text-align:center;cursor:pointer;border-radius:6px;font-size:13px;font-weight:600;color:var(--mt);transition:all .2s;border:none;background:none;font-family:inherit}
 .ltab.on{background:var(--card);color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.lform{display:flex;flex-direction:column;gap:12px}
+.lform{display:flex;flex-direction:column;gap:11px}
 .lform input{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:11px 14px;color:var(--tx);font-family:inherit;font-size:14px;width:100%;transition:border-color .2s}
 .lform input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--gg)}
 .lform input::placeholder{color:var(--mt)}
+.lsep{text-align:center;font-size:11px;color:var(--mt);padding:4px 0;letter-spacing:.5px;text-transform:uppercase}
+/* SETUP (primeiro acesso) */
+#setup{display:none;position:fixed;inset:0;background:var(--bg);z-index:9000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+#setup.show{display:flex}
+.setup-box{background:var(--card);border:1px solid var(--green);border-radius:16px;padding:36px 32px;width:100%;max-width:480px;box-shadow:0 0 40px var(--gg)}
+.setup-title{text-align:center;margin-bottom:24px}
+.setup-title .icon{font-size:42px;display:block;margin-bottom:10px}
+.setup-title h2{font-size:18px;font-weight:800;color:var(--green)}
+.setup-title p{font-size:12px;color:var(--mt);margin-top:4px}
+.setup-step{font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:16px}
+.setup-step:first-of-type{margin-top:0}
 .lbtn{background:var(--green);color:#000;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:14px;cursor:pointer;width:100%;transition:all .2s;margin-top:4px;font-family:inherit}
 .lbtn:hover{background:var(--gdim);box-shadow:0 4px 14px var(--gg)}
 .lbtn:disabled{opacity:.45;cursor:not-allowed}
@@ -191,6 +202,36 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 </div>
 
 <!-- LOGIN -->
+<!-- SETUP: primeiro acesso -->
+<div id="setup">
+  <div class="setup-box">
+    <div class="setup-title">
+      <span class="icon">🏭</span>
+      <h2>Configuração Inicial</h2>
+      <p>Bem-vindo! Configure sua empresa e crie o usuário administrador.</p>
+    </div>
+    <div id="setup-err" class="lerr" style="display:none;margin-bottom:14px"></div>
+
+    <div class="setup-step">1. Dados da Empresa</div>
+    <div class="lform">
+      <input type="text" id="s-empresa" placeholder="Nome da Empresa *" maxlength="80">
+      <input type="text" id="s-cnpj" placeholder="CNPJ (opcional)" maxlength="20">
+      <input type="text" id="s-end" placeholder="Endereço (opcional)" maxlength="120">
+      <input type="text" id="s-tel" placeholder="Telefone (opcional)" maxlength="20">
+    </div>
+
+    <div class="setup-step" style="margin-top:18px">2. Usuário Administrador</div>
+    <div class="lform">
+      <input type="text" id="s-nome" placeholder="Seu nome completo *" maxlength="60">
+      <input type="text" id="s-user" placeholder="Login (sem espaços) *" maxlength="30" autocomplete="username">
+      <input type="password" id="s-pass" placeholder="Senha (mín. 4 caracteres) *" autocomplete="new-password">
+      <input type="password" id="s-pass2" placeholder="Confirmar senha *" autocomplete="new-password">
+      <button class="lbtn" id="btn-setup" onclick="doSetup()">✅ Criar sistema e entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN / CADASTRO -->
 <div id="login">
   <div class="lbox">
     <div class="llogo">
@@ -198,11 +239,35 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
       <h1>MTEC Estoque</h1>
       <p>Sistema de Controle de Estoque</p>
     </div>
+    <div class="ltabs">
+      <button class="ltab on" id="tab-login" onclick="showTab('login')">Entrar</button>
+      <button class="ltab" id="tab-cad" onclick="showTab('cad')">Criar Conta</button>
+    </div>
     <div id="lerr" class="lerr" style="display:none;margin-bottom:12px"></div>
-    <div class="lform">
-      <input type="text" id="lu" placeholder="Usuário" autocomplete="username">
-      <input type="password" id="lp" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="lbtn" id="btn-li" onclick="doLogin()">Entrar</button>
+
+    <!-- ABA ENTRAR -->
+    <div id="pane-login">
+      <div class="lform">
+        <input type="text" id="lu" placeholder="Usuário" autocomplete="username">
+        <input type="password" id="lp" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="lbtn" id="btn-li" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+
+    <!-- ABA CRIAR CONTA -->
+    <div id="pane-cad" style="display:none">
+      <div class="lform">
+        <input type="text" id="c-nome" placeholder="Seu nome completo *" maxlength="60">
+        <input type="text" id="c-empresa" placeholder="Nome da sua empresa *" maxlength="80">
+        <input type="text" id="c-cnpj" placeholder="CNPJ (opcional)" maxlength="20">
+        <input type="text" id="c-end" placeholder="Endereço (opcional)" maxlength="120">
+        <input type="text" id="c-tel" placeholder="Telefone (opcional)" maxlength="20">
+        <div class="lsep">── Acesso ao sistema ──</div>
+        <input type="text" id="c-user" placeholder="Login (sem espaços) *" maxlength="30" autocomplete="username">
+        <input type="password" id="c-pass" placeholder="Senha (mín. 4 caracteres) *" autocomplete="new-password">
+        <input type="password" id="c-pass2" placeholder="Confirmar senha *" autocomplete="new-password">
+        <button class="lbtn" id="btn-cad" onclick="doCadastro()">Criar minha conta</button>
+      </div>
     </div>
   </div>
 </div>
@@ -533,7 +598,7 @@ async function init(){
   ls.style.display='flex';
   setMsg('Iniciando...');
   const saved=localStorage.getItem('mtec_u');
-  setMsg(saved?'Sessão encontrada...':'Sem sessão, abrindo login...');
+  setMsg(saved?'Sessão encontrada...':'Verificando banco...');
   if(saved){
     try{
       curUser=JSON.parse(saved);
@@ -544,6 +609,21 @@ async function init(){
       return;
     }catch(e){localStorage.removeItem('mtec_u');curUser=null;}
   }
+  // Verifica se é primeiro acesso (nenhum usuário cadastrado)
+  try{
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000));
+    const{data,error}=await Promise.race([
+      sb.from('usuarios').select('id').limit(1),
+      timeout
+    ]);
+    if(!error && data && data.length===0){
+      // Banco vazio — primeiro acesso: mostra setup
+      ls.style.display='none';
+      document.getElementById('setup').classList.add('show');
+      return;
+    }
+  }catch(e){}
+  // Usuários existem ou falhou — mostra login normal
   ls.style.display='none';
   document.getElementById('login').classList.add('show');
 }
@@ -566,7 +646,110 @@ async function loadData(){
 }
 
 // ── AUTH ──
+// ── TABS LOGIN ──
+function showTab(t){
+  document.getElementById('tab-login').classList.toggle('on',t==='login');
+  document.getElementById('tab-cad').classList.toggle('on',t==='cad');
+  document.getElementById('pane-login').style.display=t==='login'?'block':'none';
+  document.getElementById('pane-cad').style.display=t==='cad'?'block':'none';
+  document.getElementById('lerr').style.display='none';
+}
+
 function showErr(m){const e=document.getElementById('lerr');e.textContent=m;e.style.display='block';}
+function showSetupErr(m){const e=document.getElementById('setup-err');e.textContent=m;e.style.display='block';}
+
+// ── SETUP (primeiro acesso) ──
+async function doSetup(){
+  const empresa=document.getElementById('s-empresa').value.trim();
+  const nome=document.getElementById('s-nome').value.trim();
+  const user=document.getElementById('s-user').value.trim().toLowerCase().replace(/\s/g,'');
+  const pass=document.getElementById('s-pass').value;
+  const pass2=document.getElementById('s-pass2').value;
+  if(!empresa){showSetupErr('Informe o nome da empresa.');return;}
+  if(!nome){showSetupErr('Informe seu nome completo.');return;}
+  if(!user||user.length<3){showSetupErr('Login deve ter ao menos 3 caracteres.');return;}
+  if(pass.length<4){showSetupErr('Senha deve ter ao menos 4 caracteres.');return;}
+  if(pass!==pass2){showSetupErr('As senhas não conferem.');return;}
+  const btn=document.getElementById('btn-setup');
+  btn.disabled=true;btn.textContent='Criando...';
+  try{
+    // Cria usuário admin
+    const{data:u,error:e}=await sb.from('usuarios').insert({
+      username:user,nome,senha:hs(pass),role:'admin'
+    }).select().single();
+    if(e){
+      if(e.code==='23505')showSetupErr('Este login já existe. Tente outro.');
+      else showSetupErr('Erro ao criar usuário: '+e.message);
+      btn.disabled=false;btn.textContent='✅ Criar sistema e entrar';return;
+    }
+    // Salva configurações da empresa
+    const cfgVal={
+      empresa,cnpj:document.getElementById('s-cnpj').value.trim(),
+      endereco:document.getElementById('s-end').value.trim(),
+      telefone:document.getElementById('s-tel').value.trim(),
+      responsavel:nome,minimo:5
+    };
+    await sb.from('configuracoes').insert({user_id:u.id,chave:'config',valor:JSON.stringify(cfgVal)});
+    // Loga automaticamente
+    curUser={id:u.id,username:u.username,nome:u.nome,role:u.role};
+    localStorage.setItem('mtec_u',JSON.stringify(curUser));
+    cfg=cfgVal;
+    document.getElementById('setup').classList.remove('show');
+    setMsg('Carregando dados...');
+    document.getElementById('ls').style.display='flex';
+    await loadData();
+    showApp();
+  }catch(err){
+    showSetupErr('Erro inesperado: '+err.message);
+    btn.disabled=false;btn.textContent='✅ Criar sistema e entrar';
+  }
+}
+
+// ── CADASTRO NOVO USUÁRIO ──
+async function doCadastro(){
+  const nome=document.getElementById('c-nome').value.trim();
+  const empresa=document.getElementById('c-empresa').value.trim();
+  const user=document.getElementById('c-user').value.trim().toLowerCase().replace(/\s/g,'');
+  const pass=document.getElementById('c-pass').value;
+  const pass2=document.getElementById('c-pass2').value;
+  if(!nome){showErr('Informe seu nome completo.');return;}
+  if(!empresa){showErr('Informe o nome da sua empresa.');return;}
+  if(!user||user.length<3){showErr('Login deve ter ao menos 3 caracteres.');return;}
+  if(pass.length<4){showErr('Senha deve ter ao menos 4 caracteres.');return;}
+  if(pass!==pass2){showErr('As senhas não conferem.');return;}
+  const btn=document.getElementById('btn-cad');
+  btn.disabled=true;btn.textContent='Criando conta...';
+  try{
+    // Verifica se login já existe
+    const{data:ex}=await sb.from('usuarios').select('id').eq('username',user).maybeSingle();
+    if(ex){showErr('Este login já está em uso. Escolha outro.');btn.disabled=false;btn.textContent='Criar minha conta';return;}
+    // Cria usuário com perfil 'usuario'
+    const{data:u,error:e}=await sb.from('usuarios').insert({
+      username:user,nome,senha:hs(pass),role:'usuario'
+    }).select().single();
+    if(e){showErr('Erro ao criar conta: '+e.message);btn.disabled=false;btn.textContent='Criar minha conta';return;}
+    // Salva dados da empresa do novo usuário
+    const cfgVal={
+      empresa,cnpj:document.getElementById('c-cnpj').value.trim(),
+      endereco:document.getElementById('c-end').value.trim(),
+      telefone:document.getElementById('c-tel').value.trim(),
+      responsavel:nome,minimo:5
+    };
+    await sb.from('configuracoes').insert({user_id:u.id,chave:'config',valor:JSON.stringify(cfgVal)});
+    // Loga automaticamente
+    curUser={id:u.id,username:u.username,nome:u.nome,role:u.role};
+    localStorage.setItem('mtec_u',JSON.stringify(curUser));
+    cfg=cfgVal;
+    document.getElementById('login').classList.remove('show');
+    setMsg('Carregando dados...');
+    document.getElementById('ls').style.display='flex';
+    await loadData();
+    showApp();
+  }catch(err){
+    showErr('Erro inesperado: '+err.message);
+    btn.disabled=false;btn.textContent='Criar minha conta';
+  }
+}
 
 async function doLogin(){
   const u=document.getElementById('lu').value.trim().toLowerCase();
@@ -618,6 +801,12 @@ function doLogout(){
   document.getElementById('lu').value='';
   document.getElementById('lp').value='';
   document.getElementById('lerr').style.display='none';
+  // Reset aba para login
+  showTab('login');
+  // Limpa campos de cadastro
+  ['c-nome','c-empresa','c-cnpj','c-end','c-tel','c-user','c-pass','c-pass2'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
 }
 
 function showApp(){
