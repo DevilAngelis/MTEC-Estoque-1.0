@@ -190,6 +190,37 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 .uav{width:38px;height:38px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 
 @media(max-width:600px){.c2,.c3{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.mv{font-size:22px}.htitle{font-size:16px}}
+
+/* ── OBRA SELECTION ── */
+#obra-sel{display:none;position:fixed;inset:0;background:var(--bg);z-index:8500;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+#obra-sel.show{display:flex}
+.obra-box{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:32px 28px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.obra-logo{text-align:center;margin-bottom:22px}
+.obra-logo .icon{font-size:38px;display:block;margin-bottom:8px}
+.obra-logo h1{font-size:18px;font-weight:800;color:var(--green)}
+.obra-logo p{font-size:12px;color:var(--mt);margin-top:3px}
+.obra-lista{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.obra-item{background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px}
+.obra-item:hover,.obra-item:active{border-color:var(--green);background:var(--gg)}
+/* ── SETUP ── */
+#setup{display:none;position:fixed;inset:0;background:var(--bg);z-index:9000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+#setup.show{display:flex}
+.setup-box{background:var(--card);border:1px solid var(--green);border-radius:16px;padding:36px 32px;width:100%;max-width:480px;box-shadow:0 0 40px var(--gg)}
+.setup-title{text-align:center;margin-bottom:24px}
+.setup-title .icon{font-size:42px;display:block;margin-bottom:10px}
+.setup-title h2{font-size:18px;font-weight:800;color:var(--green)}
+.setup-title p{font-size:12px;color:var(--mt);margin-top:4px}
+.setup-step{font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
+.sform{display:flex;flex-direction:column;gap:10px}
+.sform input{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:11px 14px;color:var(--tx);font-family:inherit;font-size:14px;width:100%;transition:border-color .2s}
+.sform input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--gg)}
+.sform input::placeholder{color:var(--mt)}
+.serr{color:var(--red);font-size:12px;padding:8px;background:rgba(255,68,68,.1);border-radius:6px;border:1px solid rgba(255,68,68,.25)}
+.lbtn{background:var(--green);color:#000;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:14px;cursor:pointer;width:100%;transition:all .2s;margin-top:4px;font-family:inherit}
+.lbtn:hover{background:var(--gdim)}.lbtn:disabled{opacity:.45;cursor:not-allowed}
+.obra-badge{display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.15);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:#000;max-width:190px}
+.obra-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -201,73 +232,55 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
   <div class="lt" id="lmsg">Conectando...</div>
 </div>
 
-<!-- LOGIN -->
 <!-- SETUP: primeiro acesso -->
 <div id="setup">
   <div class="setup-box">
     <div class="setup-title">
       <span class="icon">🏭</span>
       <h2>Configuração Inicial</h2>
-      <p>Bem-vindo! Configure sua empresa e crie o usuário administrador.</p>
+      <p>Configure sua empresa e crie a primeira obra.</p>
     </div>
-    <div id="setup-err" class="lerr" style="display:none;margin-bottom:14px"></div>
-
+    <div id="setup-err" class="serr" style="display:none;margin-bottom:12px"></div>
     <div class="setup-step">1. Dados da Empresa</div>
-    <div class="lform">
+    <div class="sform">
       <input type="text" id="s-empresa" placeholder="Nome da Empresa *" maxlength="80">
-      <input type="text" id="s-cnpj" placeholder="CNPJ (opcional)" maxlength="20">
-      <input type="text" id="s-end" placeholder="Endereço (opcional)" maxlength="120">
-      <input type="text" id="s-tel" placeholder="Telefone (opcional)" maxlength="20">
+      <input type="text" id="s-cnpj"    placeholder="CNPJ (opcional)" maxlength="20">
+      <input type="text" id="s-end"     placeholder="Endereço (opcional)" maxlength="120">
+      <input type="text" id="s-tel"     placeholder="Telefone (opcional)" maxlength="20">
     </div>
-
-    <div class="setup-step" style="margin-top:18px">2. Usuário Administrador</div>
-    <div class="lform">
-      <input type="text" id="s-nome" placeholder="Seu nome completo *" maxlength="60">
-      <input type="text" id="s-user" placeholder="Login (sem espaços) *" maxlength="30" autocomplete="username">
-      <input type="password" id="s-pass" placeholder="Senha (mín. 4 caracteres) *" autocomplete="new-password">
-      <input type="password" id="s-pass2" placeholder="Confirmar senha *" autocomplete="new-password">
-      <button class="lbtn" id="btn-setup" onclick="doSetup()">✅ Criar sistema e entrar</button>
+    <div class="setup-step">2. Primeira Obra</div>
+    <div class="sform">
+      <input type="text" id="s-obra"  placeholder="Nome da Obra (ex: Obra Centro) *" maxlength="80">
+      <input type="text" id="s-odesc" placeholder="Endereço / descrição (opcional)" maxlength="120">
+      <button class="lbtn" id="btn-setup" onclick="doSetup()">✅ Iniciar sistema</button>
     </div>
   </div>
 </div>
 
-<!-- LOGIN / CADASTRO -->
-<div id="login">
-  <div class="lbox">
-    <div class="llogo">
-      <span class="icon">🏭</span>
-      <h1>MTEC Estoque</h1>
-      <p>Sistema de Controle de Estoque</p>
+<!-- SELEÇÃO DE OBRA -->
+<div id="obra-sel">
+  <div class="obra-box">
+    <div class="obra-logo">
+      <span class="icon">🏗️</span>
+      <h1 id="os-empresa">MTEC Estoque</h1>
+      <p>Selecione a obra para acessar</p>
     </div>
-    <div class="ltabs">
-      <button class="ltab on" id="tab-login" onclick="showTab('login')">Entrar</button>
-      <button class="ltab" id="tab-cad" onclick="showTab('cad')">Criar Conta</button>
-    </div>
-    <div id="lerr" class="lerr" style="display:none;margin-bottom:12px"></div>
+    <div id="os-lista" class="obra-lista"></div>
+    <button class="lbtn" id="btn-nova-obra" onclick="abrirModalObra(null)" style="margin-top:4px">+ Nova Obra</button>
+  </div>
+</div>
 
-    <!-- ABA ENTRAR -->
-    <div id="pane-login">
-      <div class="lform">
-        <input type="text" id="lu" placeholder="Usuário" autocomplete="username">
-        <input type="password" id="lp" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
-        <button class="lbtn" id="btn-li" onclick="doLogin()">Entrar</button>
-      </div>
-    </div>
-
-    <!-- ABA CRIAR CONTA -->
-    <div id="pane-cad" style="display:none">
-      <div class="lform">
-        <input type="text" id="c-nome" placeholder="Seu nome completo *" maxlength="60">
-        <input type="text" id="c-empresa" placeholder="Nome da sua empresa *" maxlength="80">
-        <input type="text" id="c-cnpj" placeholder="CNPJ (opcional)" maxlength="20">
-        <input type="text" id="c-end" placeholder="Endereço (opcional)" maxlength="120">
-        <input type="text" id="c-tel" placeholder="Telefone (opcional)" maxlength="20">
-        <div class="lsep">── Acesso ao sistema ──</div>
-        <input type="text" id="c-user" placeholder="Login (sem espaços) *" maxlength="30" autocomplete="username">
-        <input type="password" id="c-pass" placeholder="Senha (mín. 4 caracteres) *" autocomplete="new-password">
-        <input type="password" id="c-pass2" placeholder="Confirmar senha *" autocomplete="new-password">
-        <button class="lbtn" id="btn-cad" onclick="doCadastro()">Criar minha conta</button>
-      </div>
+<!-- MODAL NOVA/EDITAR OBRA -->
+<div id="modal-obra" class="ov">
+  <div class="modal" style="max-width:420px">
+    <div class="mhd"><span id="mo-titulo">🏗️ Nova Obra</span><button class="mc2" onclick="closeModal('modal-obra')">✕</button></div>
+    <input type="hidden" id="mo-id">
+    <div id="mo-err" class="serr" style="display:none;margin-bottom:12px"></div>
+    <div class="fr"><div><label>Nome da Obra *</label><input type="text" id="mo-nome" placeholder="Ex: Obra Centro, Residencial Vila A" maxlength="80"></div></div>
+    <div class="fr"><div><label>Endereço / Descrição</label><input type="text" id="mo-desc" placeholder="Endereço da obra (opcional)" maxlength="120"></div></div>
+    <div class="mft">
+      <button class="btn bg" onclick="closeModal('modal-obra')">Cancelar</button>
+      <button class="btn bp" onclick="salvarObra()">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -277,11 +290,11 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
   <div class="hdr">
     <div>
       <div class="htitle">🏭 MTEC Estoque</div>
-      <div class="hsub">Sistema de Controle de Estoque</div>
+      <div class="hsub" id="h-empresa-sub">Sistema de Controle de Estoque</div>
     </div>
     <div class="hright">
-      <div class="ubadge"><span id="h-nome">—</span><span class="rtag" id="h-role">—</span></div>
-      <button class="hbtn" onclick="doLogout()">Sair</button>
+      <div class="obra-badge">🏗️ <span id="h-obra-nome">—</span></div>
+      <button class="hbtn" onclick="trocarObra()" title="Trocar obra">🔄</button>
       <button class="hbtn" onclick="openModal('modal-exp')">📤</button>
     </div>
   </div>
@@ -290,7 +303,7 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
     <button class="nb" onclick="goPage('materiais',this)">📦 Materiais</button>
     <button class="nb" onclick="goPage('movimentacoes',this)">🔄 Movimentações</button>
     <button class="nb" onclick="goPage('relatorios',this)">📋 Relatórios</button>
-    <button class="nb adm" onclick="goPage('usuarios',this)" style="display:none">👥 Usuários</button>
+    <button class="nb" onclick="goPage('obras',this)">🏗️ Obras</button>
     <button class="nb" onclick="goPage('config',this)">⚙️ Config</button>
   </nav>
   <div class="main">
@@ -427,40 +440,24 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
       <div class="card" style="display:none"><div id="rf-cat"></div></div>
     </div>
 
-    <!-- USUÁRIOS -->
-    <div id="page-usuarios" class="page">
-      <div class="card mb16"><div class="st">👥 Usuários Cadastrados</div><div id="ul"></div></div>
-      <div class="card">
-        <div class="st">➕ Criar Usuário</div>
-        <div class="fr c2">
-          <div><label>Usuário</label><input type="text" id="nu-u" placeholder="nome de usuário"></div>
-          <div><label>Nome completo</label><input type="text" id="nu-n" placeholder="nome completo"></div>
-        </div>
-        <div class="fr c2">
-          <div><label>Senha</label><input type="password" id="nu-p" placeholder="senha"></div>
-          <div><label>Perfil</label><select id="nu-r"><option value="usuario">Usuário</option></select></div>
-        </div>
-        <button class="btn bp sm" onclick="criarUser()">➕ Criar Usuário</button>
-      </div>
+    <!-- OBRAS -->
+    <div id="page-obras" class="page">
+      <div class="sb"><button class="btn bp" onclick="abrirModalObra(null)">+ Nova Obra</button></div>
+      <div id="obras-lista"></div>
     </div>
 
-    <!-- CONFIG -->
+        <!-- CONFIG -->
     <div id="page-config" class="page">
-      <!-- Aviso somente leitura para não-admin -->
-      <div id="cfg-readonly-banner" style="display:none;border-color:var(--or)" class="card mb16">
-        <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
-          <span style="font-size:20px">🔒</span>
-          <div>
-            <div style="font-weight:700;color:var(--or)">Acesso somente leitura</div>
-            <div class="cm fs12">Apenas administradores podem alterar as configurações do sistema.</div>
-          </div>
-        </div>
-      </div>
+
       <div class="g g2">
         <div class="card">
-          <div class="st">🏷️ Categorias</div>
+          <div class="st">🏷️ Categorias por Obra</div>
           <div id="cfg-cats-edit">
-            <div class="flex g10 mb16"><input type="text" id="nc" placeholder="Nova categoria..."><button class="btn bp sm" onclick="addCat()">+ Add</button></div>
+            <div class="flex g10 mb16" style="flex-wrap:wrap">
+              <select id="nc-obra" style="width:auto;flex:1;min-width:140px"></select>
+              <input type="text" id="nc" placeholder="Nova categoria..." style="flex:2;min-width:140px">
+              <button class="btn bp sm" onclick="addCat()">+ Add</button>
+            </div>
           </div>
           <div id="lc"></div>
         </div>
@@ -494,23 +491,12 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
     <div class="mhd"><span id="mm-t">📦 Novo Material</span><button class="mc2" onclick="closeModal('modal-mat')">✕</button></div>
     <input type="hidden" id="m-cd">
     <div class="fr"><div><label>Nome *</label><input type="text" id="m-nm" placeholder="Nome do material"></div></div>
+    <div class="fr"><div><label>Obra</label><select id="m-obra"></select></div></div>
     <div class="fr c2"><div><label>Categoria</label><select id="m-ct"></select></div><div><label>Unidade</label><select id="m-un"><option>UN</option><option>KG</option><option>LT</option><option>M</option><option>M²</option><option>CX</option><option>PC</option><option>RL</option></select></div></div>
     <div class="fr c3"><div><label>Quantidade</label><input type="number" id="m-qt" value="0" min="0"></div><div><label>Qtd Mínima</label><input type="number" id="m-mn" value="5" min="0"></div><div><label>Valor Unit. (R$)</label><input type="number" id="m-vl" value="0" step="0.01"></div></div>
     <div class="fr c2"><div><label>Localização</label><input type="text" id="m-lc" placeholder="Ex: Prateleira A3"></div><div><label>Fornecedor</label><input type="text" id="m-fn" placeholder="Nome do fornecedor"></div></div>
     <div class="fr"><div><label>Observações</label><textarea id="m-ob" rows="2" placeholder="Notas adicionais..."></textarea></div></div>
     <div class="mft"><button class="btn bg" onclick="closeModal('modal-mat')">Cancelar</button><button class="btn bp" id="b-svm" onclick="saveMat()">💾 Salvar</button></div>
-  </div>
-</div>
-
-<!-- MODAL USUÁRIO EDITAR -->
-<div id="modal-usr" class="ov">
-  <div class="modal" style="max-width:400px">
-    <div class="mhd"><span>👤 Editar Usuário</span><button class="mc2" onclick="closeModal('modal-usr')">✕</button></div>
-    <input type="hidden" id="eu-id">
-    <div class="fr"><div><label>Nome completo</label><input type="text" id="eu-n" placeholder="Nome completo"></div></div>
-    <div class="fr"><div><label>Nova senha (deixe em branco para manter)</label><input type="password" id="eu-p" placeholder="Nova senha"></div></div>
-    <div class="fr"><div><label>Perfil</label><select id="eu-r"><option value="usuario">Usuário</option><option value="admin">Administrador</option></select></div></div>
-    <div class="mft"><button class="btn bg" onclick="closeModal('modal-usr')">Cancelar</button><button class="btn bp" onclick="salvarUser()">💾 Salvar</button></div>
   </div>
 </div>
 
@@ -553,8 +539,9 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 <div id="pdf-panel" style="display:none;position:fixed;inset:0;z-index:2000;background:#fff;flex-direction:column">
   <div style="position:fixed;top:0;left:0;right:0;background:#1a1a1a;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:2010;min-height:56px">
     <span id="pdf-title" style="color:#aaa;font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <button onclick="pdfPrint()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🖨️</button>
-    <button onclick="pdfFechar()" style="background:#cc3300;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">✕ Voltar</button>
+    <button onclick="pdfPrint()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🖨️ Imprimir</button>
+    <button onclick="pdfPrintFechar()" style="background:#005500;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🖨️ Impr+Fechar</button>
+    <button onclick="pdfFechar()" style="background:#cc3300;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">✕ Fechar</button>
   </div>
   <div style="height:56px;flex-shrink:0"></div>
   <iframe id="pdf-frame" style="flex:1;border:none;width:100%;background:#fff"></iframe>
@@ -567,295 +554,159 @@ const SURL='https://ogbbzvvdwpmdebuygvyz.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nYmJ6dnZkd3BtZGVidXlndnl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2OTMzMTAsImV4cCI6MjA4NzI2OTMxMH0.ZyhUBGIfEFiXmZYNlCDOJnmuyWLOk7J6PeGiVaYtEFY';
 const sb=supabase.createClient(SURL,SKEY);
 
-let mats=[],movs=[],cats=['Geral','Elétrico','Hidráulico','Ferramentas','EPI','Escritório'];
-let cfg={empresa:'MTEC',cnpj:'',endereco:'',telefone:'',responsavel:'Administrador',minimo:5};
-let editId=null,acIdx=-1,curUser=null,allUsers=[];
-let adminMatUser=null; // null = todos, id = usuário específico (admin)
-let adminRelUser=null;
+// ── ESTADO GLOBAL ──────────────────────────────────────
+let mats=[],movs=[],cats=[];
+let allCats={};          // {obra_id: ['Cat1','Cat2',...]}
+let allObras=[];         // [{id,nome,descricao}]
+let curObra=null;        // obra ativa
+let cfg={empresa:'MTEC',cnpj:'',endereco:'',telefone:'',responsavel:'Responsável',minimo:5};
+let editId=null,acIdx=-1;
 
-// ── BACK BUTTON ANDROID ──
-document.addEventListener('backbutton', function(e){
+// ── BACK BUTTON ANDROID ──────────────────────────────
+document.addEventListener('backbutton',function(e){
   e.preventDefault();
-  const panel=document.getElementById('pdf-panel');
-  if(panel&&panel.style.display!=='none'){
-    pdfFechar();
-    return;
-  }
-  // Se estiver no dashboard, minimiza o app
-  // Caso contrário, volta para o dashboard
-  const curPage=localStorage.getItem('mtec_page')||'dashboard';
-  if(curPage==='dashboard'){
-    if(navigator.app) navigator.app.exitApp();
-  } else {
-    const nb=document.querySelector('.nb[onclick*="dashboard"]');
-    goPage('dashboard',nb);
-  }
-}, false);
+  if(document.getElementById('pdf-panel').style.display!=='none'){pdfFechar();return;}
+  const p=localStorage.getItem('mtec_page')||'dashboard';
+  if(p==='dashboard'){if(navigator.app)navigator.app.exitApp();}
+  else goPage('dashboard',document.querySelector('.nb[onclick*="dashboard"]'));
+},false);
 
-// ── INIT ──
+// ── INIT ──────────────────────────────────────────────
 async function init(){
   const ls=document.getElementById('ls');
-  ls.style.display='flex';
-  setMsg('Iniciando...');
-  const saved=localStorage.getItem('mtec_u');
-  setMsg(saved?'Sessão encontrada...':'Verificando banco...');
-  if(saved){
-    try{
-      curUser=JSON.parse(saved);
-      setMsg('Carregando dados...');
-      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
-      await Promise.race([loadData(),timeout]);
-      showApp();
-      return;
-    }catch(e){localStorage.removeItem('mtec_u');curUser=null;}
-  }
-  // Verifica se é primeiro acesso (nenhum usuário cadastrado)
-  try{
-    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000));
-    const{data,error}=await Promise.race([
-      sb.from('usuarios').select('id').limit(1),
-      timeout
-    ]);
-    if(!error && data && data.length===0){
-      // Banco vazio — primeiro acesso: mostra setup
-      ls.style.display='none';
-      document.getElementById('setup').classList.add('show');
-      return;
-    }
-  }catch(e){}
-  // Usuários existem ou falhou — mostra login normal
-  ls.style.display='none';
-  document.getElementById('login').classList.add('show');
-}
-
-function hs(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return'h'+Math.abs(h).toString(36)+s.length;}
-
-async function loadData(){
-  const uid=curUser.id,isAdm=curUser.role==='admin';
-  const mq=isAdm?sb.from('materiais').select('*').order('nome'):sb.from('materiais').select('*').eq('user_id',uid).order('nome');
-  const vq=isAdm?sb.from('movimentos').select('*').order('created_at',{ascending:false}).limit(500):sb.from('movimentos').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(500);
-  const cq=sb.from('configuracoes').select('*').eq('user_id',uid);
-  const[mr,vr,cr]=await Promise.all([mq,vq,cq]);
-  if(mr.data)mats=mr.data;
-  if(vr.data)movs=vr.data;
-  if(cr.data)cr.data.forEach(r=>{
-    if(r.chave==='config')try{cfg=JSON.parse(r.valor);}catch(e){}
-    if(r.chave==='cats')try{cats=JSON.parse(r.valor);}catch(e){}
-  });
-  if(isAdm){const{data:us}=await sb.from('usuarios').select('id,username,nome,role,created_at').order('created_at');if(us)allUsers=us;}
-}
-
-// ── AUTH ──
-// ── TABS LOGIN ──
-function showTab(t){
-  document.getElementById('tab-login').classList.toggle('on',t==='login');
-  document.getElementById('tab-cad').classList.toggle('on',t==='cad');
-  document.getElementById('pane-login').style.display=t==='login'?'block':'none';
-  document.getElementById('pane-cad').style.display=t==='cad'?'block':'none';
-  document.getElementById('lerr').style.display='none';
-}
-
-function showErr(m){const e=document.getElementById('lerr');e.textContent=m;e.style.display='block';}
-function showSetupErr(m){const e=document.getElementById('setup-err');e.textContent=m;e.style.display='block';}
-
-// ── SETUP (primeiro acesso) ──
-async function doSetup(){
-  const empresa=document.getElementById('s-empresa').value.trim();
-  const nome=document.getElementById('s-nome').value.trim();
-  const user=document.getElementById('s-user').value.trim().toLowerCase().replace(/\s/g,'');
-  const pass=document.getElementById('s-pass').value;
-  const pass2=document.getElementById('s-pass2').value;
-  if(!empresa){showSetupErr('Informe o nome da empresa.');return;}
-  if(!nome){showSetupErr('Informe seu nome completo.');return;}
-  if(!user||user.length<3){showSetupErr('Login deve ter ao menos 3 caracteres.');return;}
-  if(pass.length<4){showSetupErr('Senha deve ter ao menos 4 caracteres.');return;}
-  if(pass!==pass2){showSetupErr('As senhas não conferem.');return;}
-  const btn=document.getElementById('btn-setup');
-  btn.disabled=true;btn.textContent='Criando...';
-  try{
-    // Cria usuário admin
-    const{data:u,error:e}=await sb.from('usuarios').insert({
-      username:user,nome,senha:hs(pass),role:'admin'
-    }).select().single();
-    if(e){
-      if(e.code==='23505')showSetupErr('Este login já existe. Tente outro.');
-      else showSetupErr('Erro ao criar usuário: '+e.message);
-      btn.disabled=false;btn.textContent='✅ Criar sistema e entrar';return;
-    }
-    // Salva configurações da empresa
-    const cfgVal={
-      empresa,cnpj:document.getElementById('s-cnpj').value.trim(),
-      endereco:document.getElementById('s-end').value.trim(),
-      telefone:document.getElementById('s-tel').value.trim(),
-      responsavel:nome,minimo:5
-    };
-    await sb.from('configuracoes').insert({user_id:u.id,chave:'config',valor:JSON.stringify(cfgVal)});
-    // Loga automaticamente
-    curUser={id:u.id,username:u.username,nome:u.nome,role:u.role};
-    localStorage.setItem('mtec_u',JSON.stringify(curUser));
-    cfg=cfgVal;
-    document.getElementById('setup').classList.remove('show');
-    setMsg('Carregando dados...');
-    document.getElementById('ls').style.display='flex';
-    await loadData();
-    showApp();
-  }catch(err){
-    showSetupErr('Erro inesperado: '+err.message);
-    btn.disabled=false;btn.textContent='✅ Criar sistema e entrar';
-  }
-}
-
-// ── CADASTRO NOVO USUÁRIO ──
-async function doCadastro(){
-  const nome=document.getElementById('c-nome').value.trim();
-  const empresa=document.getElementById('c-empresa').value.trim();
-  const user=document.getElementById('c-user').value.trim().toLowerCase().replace(/\s/g,'');
-  const pass=document.getElementById('c-pass').value;
-  const pass2=document.getElementById('c-pass2').value;
-  if(!nome){showErr('Informe seu nome completo.');return;}
-  if(!empresa){showErr('Informe o nome da sua empresa.');return;}
-  if(!user||user.length<3){showErr('Login deve ter ao menos 3 caracteres.');return;}
-  if(pass.length<4){showErr('Senha deve ter ao menos 4 caracteres.');return;}
-  if(pass!==pass2){showErr('As senhas não conferem.');return;}
-  const btn=document.getElementById('btn-cad');
-  btn.disabled=true;btn.textContent='Criando conta...';
-  try{
-    // Verifica se login já existe
-    const{data:ex}=await sb.from('usuarios').select('id').eq('username',user).maybeSingle();
-    if(ex){showErr('Este login já está em uso. Escolha outro.');btn.disabled=false;btn.textContent='Criar minha conta';return;}
-    // Cria usuário com perfil 'usuario'
-    const{data:u,error:e}=await sb.from('usuarios').insert({
-      username:user,nome,senha:hs(pass),role:'usuario'
-    }).select().single();
-    if(e){showErr('Erro ao criar conta: '+e.message);btn.disabled=false;btn.textContent='Criar minha conta';return;}
-    // Salva dados da empresa do novo usuário
-    const cfgVal={
-      empresa,cnpj:document.getElementById('c-cnpj').value.trim(),
-      endereco:document.getElementById('c-end').value.trim(),
-      telefone:document.getElementById('c-tel').value.trim(),
-      responsavel:nome,minimo:5
-    };
-    await sb.from('configuracoes').insert({user_id:u.id,chave:'config',valor:JSON.stringify(cfgVal)});
-    // Loga automaticamente
-    curUser={id:u.id,username:u.username,nome:u.nome,role:u.role};
-    localStorage.setItem('mtec_u',JSON.stringify(curUser));
-    cfg=cfgVal;
-    document.getElementById('login').classList.remove('show');
-    setMsg('Carregando dados...');
-    document.getElementById('ls').style.display='flex';
-    await loadData();
-    showApp();
-  }catch(err){
-    showErr('Erro inesperado: '+err.message);
-    btn.disabled=false;btn.textContent='Criar minha conta';
-  }
-}
-
-async function doLogin(){
-  const u=document.getElementById('lu').value.trim().toLowerCase();
-  const p=document.getElementById('lp').value;
-  if(!u||!p){showErr('Preencha usuário e senha.');return;}
-  const btn=document.getElementById('btn-li');btn.disabled=true;btn.textContent='Entrando...';
-  let data,error;
+  ls.style.display='flex'; setMsg('Iniciando...');
   try{
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
-    const result=await Promise.race([sb.from('usuarios').select('*').eq('username',u).maybeSingle(),timeout]);
-    data=result.data;error=result.error;
-  }catch(e){
-    btn.disabled=false;btn.textContent='Entrar';
-    showErr('Sem conexão. Verifique sua internet.');return;
-  }
-  btn.disabled=false;btn.textContent='Entrar';
-  if(error){
-    if(error.message.includes('relation')||error.code==='42P01'){
-      showErr('Banco não configurado. Execute o setup_supabase.sql no Supabase.');
-    } else {
-      showErr('Erro de conexão: '+error.message);
+    const{data,error}=await Promise.race([
+      sb.from('obras').select('id,nome,descricao').order('created_at'),
+      timeout
+    ]);
+    if(error&&(error.code==='42P01'||error.message?.includes('relation'))){
+      ls.style.display='none';
+      showSetupErr('Execute o setup_supabase.sql no Supabase primeiro.');
+      document.getElementById('setup').classList.add('show'); return;
     }
-    return;
+    allObras=data||[];
+  }catch(e){
+    ls.style.display='none';
+    showSetupErr('Sem conexão. Verifique sua internet e recarregue.');
+    document.getElementById('setup').classList.add('show'); return;
   }
-  if(!data){showErr('Usuário "'+u+'" não encontrado.');return;}
-  if(data.senha!==hs(p)){showErr('Senha incorreta. Tente novamente.');return;}
-  curUser={id:data.id,username:data.username,nome:data.nome,role:data.role};
-  localStorage.setItem('mtec_u',JSON.stringify(curUser));
-  document.getElementById('login').classList.remove('show');
-  setMsg('Carregando dados...');
-  const lsEl=document.getElementById('ls');
-  lsEl.classList.remove('hide');
-  lsEl.style.opacity='1';
-  lsEl.style.display='flex';
-  await loadData();
-  showApp();
+  if(!allObras.length){
+    ls.style.display='none';
+    document.getElementById('setup').classList.add('show'); return;
+  }
+  // Carregar empresa global
+  const{data:ed}=await sb.from('configuracoes').select('valor').eq('obra_id',0).eq('chave','empresa').maybeSingle();
+  if(ed)try{const c=JSON.parse(ed.valor);cfg={...cfg,...c};}catch(e){}
+
+  // Obra salva localmente?
+  const savedId=localStorage.getItem('mtec_obra_id');
+  if(savedId){
+    const o=allObras.find(x=>String(x.id)===savedId);
+    if(o){curObra=o;setMsg('Carregando '+o.nome+'...');try{await loadData();showApp();return;}catch(e){localStorage.removeItem('mtec_obra_id');}}
+  }
+  ls.style.display='none'; mostrarSelecaoObra();
 }
 
+// ── SETUP ────────────────────────────────────────────
+function showSetupErr(m){const e=document.getElementById('setup-err');e.textContent=m;e.style.display='block';}
 
+async function doSetup(){
+  const empresa=document.getElementById('s-empresa').value.trim();
+  const obra=document.getElementById('s-obra').value.trim();
+  if(!empresa){showSetupErr('Informe o nome da empresa.');return;}
+  if(!obra){showSetupErr('Informe o nome da primeira obra.');return;}
+  const btn=document.getElementById('btn-setup');btn.disabled=true;btn.textContent='Criando...';
+  try{
+    const cfgVal={empresa,cnpj:document.getElementById('s-cnpj').value.trim(),endereco:document.getElementById('s-end').value.trim(),telefone:document.getElementById('s-tel').value.trim(),responsavel:'Responsável',minimo:5};
+    await sb.from('configuracoes').upsert([{obra_id:0,chave:'empresa',valor:JSON.stringify(cfgVal)}],{onConflict:'obra_id,chave'});
+    const{data:o,error:oe}=await sb.from('obras').insert({nome:obra,descricao:document.getElementById('s-odesc').value.trim()}).select().single();
+    if(oe){showSetupErr('Erro: '+oe.message);btn.disabled=false;btn.textContent='✅ Iniciar sistema';return;}
+    cfg=cfgVal;curObra=o;allObras=[o];
+    localStorage.setItem('mtec_obra_id',String(o.id));
+    document.getElementById('setup').classList.remove('show');
+    document.getElementById('ls').style.display='flex';setMsg('Carregando...');
+    await loadData();showApp();
+  }catch(err){showSetupErr('Erro: '+err.message);btn.disabled=false;btn.textContent='✅ Iniciar sistema';}
+}
 
-function doLogout(){
-  localStorage.removeItem('mtec_u');
-  try{localStorage.removeItem('mtec_page');}catch(e){}
-  curUser=null;mats=[];movs=[];allUsers=[];adminMatUser=null;adminRelUser=null;
-  cfg={empresa:'MTEC',cnpj:'',endereco:'',telefone:'',responsavel:'Administrador',minimo:5};
-  cats=['Geral','Elétrico','Hidráulico','Ferramentas','EPI','Escritório'];
+// ── SELEÇÃO DE OBRA ──────────────────────────────────
+function mostrarSelecaoObra(){
   document.getElementById('app').style.display='none';
-  document.getElementById('login').classList.add('show');
-  document.getElementById('lu').value='';
-  document.getElementById('lp').value='';
-  document.getElementById('lerr').style.display='none';
-  // Reset aba para login
-  showTab('login');
-  // Limpa campos de cadastro
-  ['c-nome','c-empresa','c-cnpj','c-end','c-tel','c-user','c-pass','c-pass2'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.value='';
+  document.getElementById('os-empresa').textContent=cfg.empresa||'MTEC Estoque';
+  const lista=document.getElementById('os-lista');
+  lista.innerHTML=allObras.length?allObras.map(o=>`
+    <div class="obra-item" onclick="entrarObra(${o.id})">
+      <span style="font-size:26px">🏗️</span>
+      <div>
+        <div style="font-size:14px;font-weight:700">${o.nome}</div>
+        ${o.descricao?`<div style="font-size:11px;color:var(--mt);margin-top:2px">📍 ${o.descricao}</div>`:''}
+      </div>
+    </div>`).join(''):'<div style="text-align:center;padding:28px;color:var(--mt)">Nenhuma obra cadastrada.</div>';
+  document.getElementById('obra-sel').classList.add('show');
+}
+
+async function entrarObra(id){
+  const o=allObras.find(x=>x.id===id);if(!o)return;
+  curObra=o;localStorage.setItem('mtec_obra_id',String(id));
+  document.getElementById('obra-sel').classList.remove('show');
+  document.getElementById('ls').style.display='flex';setMsg('Carregando '+o.nome+'...');
+  try{await loadData();showApp();}
+  catch(e){document.getElementById('ls').style.display='none';mostrarSelecaoObra();showToast('❌ Erro: '+e.message);}
+}
+
+async function trocarObra(){
+  const{data}=await sb.from('obras').select('id,nome,descricao').order('created_at');
+  if(data)allObras=data;
+  mostrarSelecaoObra();
+}
+
+// ── LOAD DATA ────────────────────────────────────────
+async function loadData(){
+  if(!curObra)throw new Error('Nenhuma obra selecionada');
+  const oid=curObra.id;
+  // Carregar dados da obra atual + todas as cats (para filtro multi-obra)
+  const[mr,vr,cr,allCatsR,allObrasR]=await Promise.all([
+    sb.from('materiais').select('*').eq('obra_id',oid).order('nome'),
+    sb.from('movimentos').select('*').eq('obra_id',oid).order('created_at',{ascending:false}).limit(500),
+    sb.from('configuracoes').select('*').eq('obra_id',oid),
+    sb.from('configuracoes').select('obra_id,valor').eq('chave','cats'),
+    sb.from('obras').select('id,nome,descricao').order('created_at')
+  ]);
+  if(mr.data)mats=mr.data;
+  if(vr.data)movs=vr.data;
+  if(allObrasR.data)allObras=allObrasR.data;
+  // Montar allCats por obra
+  allCats={};
+  if(allCatsR.data){
+    allCatsR.data.forEach(r=>{
+      try{allCats[r.obra_id]=JSON.parse(r.valor);}catch(e){}
+    });
+  }
+  cats=allCats[oid]||['Geral','Elétrico','Hidráulico','Ferramentas','EPI','Escritório'];
+  if(cr.data)cr.data.forEach(r=>{
+    if(r.chave==='config')try{cfg={...cfg,...JSON.parse(r.valor)};}catch(e){}
   });
 }
 
+// ── SHOW APP ─────────────────────────────────────────
 function showApp(){
   hideLs();
   document.getElementById('app').style.display='block';
-  document.getElementById('h-nome').textContent=curUser.nome;
-  document.getElementById('h-role').textContent=curUser.role==='admin'?'👑 Admin':'👤 Usuário';
-  document.querySelectorAll('.adm').forEach(el=>el.style.display=curUser.role==='admin'?'flex':'none');
-  // Admin bars in Materiais and Relatórios
-  const isAdm=curUser.role==='admin';
-  document.getElementById('mat-admin-bar').style.display=isAdm?'block':'none';
-  document.getElementById('rel-admin-bar').style.display=isAdm?'block':'none';
-  // Populate user selectors for admin
-  if(isAdm){
-    const opts='<option value="">Todos os usuários</option>'+allUsers.map(u=>`<option value="${u.id}">${u.nome} (@${u.username})</option>`).join('');
-    document.getElementById('mat-usr-sel').innerHTML=opts;
-    document.getElementById('rel-usr-sel').innerHTML=opts;
-  }
-  // Config readonly for non-admin
-  const cfgEdit=document.getElementById('cfg-cats-edit');
-  const cfgSave=document.getElementById('cfg-save-btn');
-  const cfgBanner=document.getElementById('cfg-readonly-banner');
-  const inputs=['ce','cnpj','cend','ctel','cr','cm','nc'];
-  if(!isAdm){
-    cfgBanner.style.display='block';
-    cfgEdit.style.display='none';
-    cfgSave.style.display='none';
-    inputs.forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=true;el.style.opacity='.5';}});
-  } else {
-    cfgBanner.style.display='none';
-    cfgEdit.style.display='block';
-    cfgSave.style.display='block';
-    inputs.forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=false;el.style.opacity='1';}});
-  }
-  // Restaurar última página visitada (para quando minimiza e volta)
+  document.getElementById('h-obra-nome').textContent=curObra.nome;
+  document.getElementById('h-empresa-sub').textContent=cfg.empresa||'MTEC Estoque';
   let lastPage='dashboard';
   try{lastPage=localStorage.getItem('mtec_page')||'dashboard';}catch(e){}
-  // Validar que a página existe e o usuário tem acesso
-  const pagesAdm=['usuarios'];
-  if(pagesAdm.includes(lastPage)&&curUser.role!=='admin') lastPage='dashboard';
-  const validPages=['dashboard','materiais','movimentacoes','relatorios','usuarios','config'];
-  if(!validPages.includes(lastPage)) lastPage='dashboard';
+  const valid=['dashboard','materiais','movimentacoes','relatorios','obras','config'];
+  if(!valid.includes(lastPage))lastPage='dashboard';
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  const _nb=document.querySelector('.nb[onclick*="'+lastPage+'"]')||document.querySelector('.nb');
-  if(_nb)_nb.classList.add('on');
-  goPage(lastPage,_nb);
+  const nb=document.querySelector('.nb[onclick*="'+lastPage+'"]')||document.querySelector('.nb');
+  if(nb)nb.classList.add('on');
+  goPage(lastPage,nb);
 }
 
-// ── UI ──
+// ── UI ────────────────────────────────────────────────
 function setMsg(m){document.getElementById('lmsg').textContent=m;}
 function hideLs(){const e=document.getElementById('ls');e.style.transition='opacity .2s';e.style.opacity='0';setTimeout(()=>{e.style.display='none';e.style.opacity='1';},220);}
 let toastT;
@@ -866,15 +717,14 @@ function closeModal(id){document.getElementById(id).classList.remove('open');edi
 function goPage(p,btn){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.getElementById('page-'+p).classList.add('on');
+  const pg=document.getElementById('page-'+p);if(pg)pg.classList.add('on');
   if(btn)btn.classList.add('on');
-  // Salvar última página para retomar ao voltar ao app
   try{localStorage.setItem('mtec_page',p);}catch(e){}
   if(p==='dashboard')renderDash();
   else if(p==='materiais')renderMat();
   else if(p==='movimentacoes')renderMov();
   else if(p==='relatorios')renderRel();
-  else if(p==='usuarios')renderUsers();
+  else if(p==='obras')renderObras();
   else if(p==='config')renderCfg();
 }
 
@@ -882,73 +732,42 @@ function gst(m){if(m.qtd<=0)return{l:'Zerado',c:'tout'};if(m.qtd<=m.minimo)retur
 function fd(iso){if(!iso)return'-';const d=new Date(iso);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 function fm(v){return'R$ '+Number(v||0).toFixed(2).replace('.',',');}
 
-// ── DASHBOARD ──
+// ── DASHBOARD ──────────────────────────────────────────
 function renderDash(){
   document.getElementById('d-tot').textContent=mats.length;
   document.getElementById('d-bx').textContent=mats.filter(m=>m.qtd>0&&m.qtd<=m.minimo).length;
   document.getElementById('d-zt').textContent=mats.filter(m=>m.qtd<=0).length;
   const q=(document.getElementById('d-al-q')?.value||'').toLowerCase();
   const al=mats.filter(m=>m.qtd<=m.minimo&&(!q||m.nome.toLowerCase().includes(q)||(m.fornecedor||'').toLowerCase().includes(q)));
-  document.getElementById('d-al').innerHTML=al.length?`<div class="tw"><table><thead><tr><th>Material</th><th>Qtd</th><th>Mín</th><th>Status</th><th>Ações</th></tr></thead><tbody>${al.map(m=>{const s=gst(m);return`<tr><td class="fw6" style="cursor:pointer;color:var(--bl)" onclick="verMovMat(${m.id},'${m.nome.replace(/'/g,"\'")}')">${m.nome}<br><span class="cm fs11">${m.categoria}</span></td><td class="fw7 ${m.qtd<=0?'cr':'co'}">${m.qtd} ${m.unidade}</td><td class="cm">${m.minimo}</td><td><span class="tag ${s.c}">${s.l}</span></td><td class="flex g8"><button class="btn bp sm" onclick="openMovModal('entrada')" title="Entrada rápida">📥</button><button class="btn bg sm" onclick="editMat(${m.id})" title="Editar cadastro">✏️</button></td></tr>`;}).join('')}</tbody></table></div>`:'<div class="al as">✅ Todos os itens estão com estoque adequado!</div>';
+  document.getElementById('d-al').innerHTML=al.length?`<div class="tw"><table><thead><tr><th>Material</th><th>Qtd</th><th>Mín</th><th>Status</th><th>Ações</th></tr></thead><tbody>${al.map(m=>{const s=gst(m);return`<tr><td class="fw6" style="cursor:pointer;color:var(--bl)" onclick="verMovMat(${m.id},'${m.nome.replace(/'/g,"\\'")}')"> ${m.nome}<br><span class="cm fs11">${m.categoria}</span></td><td class="fw7 ${m.qtd<=0?'cr':'co'}">${m.qtd} ${m.unidade}</td><td class="cm">${m.minimo}</td><td><span class="tag ${s.c}">${s.l}</span></td><td class="flex g8"><button class="btn bp sm" onclick="openMovModal('entrada')">📥</button><button class="btn bg sm" onclick="editMat(${m.id})">✏️</button></td></tr>`;}).join('')}</tbody></table></div>`:'<div class="al as">✅ Todos os itens com estoque adequado!</div>';
 }
 
-
-// ── MATERIAIS ──
-function getMatsVisiveis(){
-  if(curUser.role!=='admin'||!adminMatUser)return mats;
-  return mats.filter(m=>m.user_id===adminMatUser);
-}
-
-function onMatUsrChange(){
-  const v=document.getElementById('mat-usr-sel').value;
-  adminMatUser=v?Number(v):null;
-  const u=allUsers.find(x=>x.id===adminMatUser);
-  document.getElementById('mat-usr-info').textContent=u?`${mats.filter(m=>m.user_id===adminMatUser).length} materiais`:'';
-  renderMat();
-}
-
+// ── MATERIAIS ──────────────────────────────────────────
 function renderMat(){
   const sel=document.getElementById('f-cat');const cv=sel.value;
   sel.innerHTML='<option value="">Todas categorias</option>'+cats.map(c=>`<option value="${c}"${c===cv?' selected':''}>${c}</option>`).join('');
   const q=(document.getElementById('b-mat')?.value||'').toLowerCase();const cat=document.getElementById('f-cat')?.value||'';
-  const base=getMatsVisiveis();
-  const fil=base.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q)||(m.fornecedor||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
-  document.getElementById('tb-mat').innerHTML=fil.length?fil.map(m=>{const s=gst(m);return`<tr><td class="fw6">${m.nome}${m.local?`<br><span class="cm fs11">📍 ${m.local}</span>`:''}${m.fornecedor?`<br><span class="cm fs11">🏭 ${m.fornecedor}</span>`:''}</td><td class="cb2 fs12">${m.categoria}</td><td class="fw7 ${m.qtd<=0?'cr':m.qtd<=m.minimo?'co':'cg'}">${m.qtd}</td><td class="cm">${m.minimo}</td><td class="cm fs12">${m.unidade}</td><td>${fm(m.valor)}</td><td><span class="tag ${s.c}">${s.l}</span></td><td><div class="flex g8"><button class="btn bg sm" onclick="editMat(${m.id})">✏️</button><button class="btn bd sm" onclick="delMat(${m.id})">🗑️</button></div></td></tr>`;}).join(''):`<tr><td colspan="9"><div class="empty">Nenhum material encontrado.</div></td></tr>`;
+  const fil=mats.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q)||(m.fornecedor||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
+  document.getElementById('tb-mat').innerHTML=fil.length?fil.map(m=>{const s=gst(m);return`<tr><td class="fw6">${m.nome}${m.local?`<br><span class="cm fs11">📍 ${m.local}</span>`:''}${m.fornecedor?`<br><span class="cm fs11">🏭 ${m.fornecedor}</span>`:''}</td><td class="cb2 fs12">${m.categoria}</td><td class="fw7 ${m.qtd<=0?'cr':m.qtd<=m.minimo?'co':'cg'}">${m.qtd}</td><td class="cm">${m.minimo}</td><td class="cm fs12">${m.unidade}</td><td>${fm(m.valor)}</td><td><span class="tag ${s.c}">${s.l}</span></td><td><div class="flex g8"><button class="btn bg sm" onclick="editMat(${m.id})">✏️</button><button class="btn bd sm" onclick="delMat(${m.id})">🗑️</button></div></td></tr>`;}).join(''):`<tr><td colspan="8"><div class="empty">Nenhum material encontrado.</div></td></tr>`;
 }
 
-function prtMat(){
-  const q=(document.getElementById('b-mat')?.value||'').toLowerCase();
-  const cat=document.getElementById('f-cat')?.value||'';
-  const base=getMatsVisiveis();
-  const fil=base.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
-  const usrLabel=adminMatUser?(allUsers.find(u=>u.id===adminMatUser)?.nome||''):'Todos';
-  const empresa=cfg.empresa||'MTEC';
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${cfg.empresa||'MTEC'} - Materiais</title><style>${_pdfStyle()}</style></head><body>
-  ${_pdfCabecalho('Relatório de Materiais')}
-    <div class="meta">
-      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
-      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${fil.length} itens</div>
-    </div>
-  </div>
-  <table>
-    <thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead>
-    <tbody>${fil.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
-  </table>
-  <div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  
-  </body></html>`;
-  pdfAbrir(html,'📄 Relatório de Materiais');
+function fillCatsForObra(selectId, obraId, val){
+  const oc=allCats[obraId]||['Geral'];
+  document.getElementById(selectId).innerHTML=oc.map(c=>`<option value="${c}"${c===val?' selected':''}>${c}</option>`).join('');
 }
 
-function fillCats(id,val){document.getElementById(id).innerHTML=cats.map(c=>`<option value="${c}"${c===val?' selected':''}>${c}</option>`).join('');}
+function fillObrasSelect(selectId, selectedId){
+  document.getElementById(selectId).innerHTML=allObras.map(o=>`<option value="${o.id}"${o.id==selectedId?' selected':''}>${o.nome}</option>`).join('');
+}
 
 function openMatModal(){
   editId=null;document.getElementById('mm-t').textContent='📦 Novo Material';
   ['m-cd','m-nm','m-lc','m-fn','m-ob'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('m-qt').value=0;document.getElementById('m-mn').value=cfg.minimo||5;
   document.getElementById('m-vl').value=0;document.getElementById('m-un').value='UN';
-  fillCats('m-ct','Geral');openModal('modal-mat');
+  fillObrasSelect('m-obra',curObra.id);
+  fillCatsForObra('m-ct',curObra.id,'Geral');
+  openModal('modal-mat');
 }
 
 function editMat(id){
@@ -958,17 +777,26 @@ function editMat(id){
   document.getElementById('m-qt').value=m.qtd;document.getElementById('m-mn').value=m.minimo;
   document.getElementById('m-vl').value=m.valor;document.getElementById('m-un').value=m.unidade;
   document.getElementById('m-lc').value=m.local||'';document.getElementById('m-fn').value=m.fornecedor||'';
-  document.getElementById('m-ob').value=m.obs||'';fillCats('m-ct',m.categoria);
+  document.getElementById('m-ob').value=m.obs||'';
+  fillObrasSelect('m-obra', m.obra_id||curObra.id);
+  fillCatsForObra('m-ct', m.obra_id||curObra.id, m.categoria);
   openModal('modal-mat');
+}
+
+// Atualiza categorias ao trocar obra no modal
+function onModalObraChange(){
+  const oid=Number(document.getElementById('m-obra').value);
+  fillCatsForObra('m-ct',oid,'Geral');
 }
 
 async function saveMat(){
   const nome=document.getElementById('m-nm').value.trim();if(!nome){showToast('⚠️ Nome é obrigatório!');return;}
   const btn=document.getElementById('b-svm');btn.disabled=true;btn.textContent='⏳...';
-  const pl={user_id:curUser.id,codigo:document.getElementById('m-cd').value.trim()||('MAT'+Date.now()),nome,categoria:document.getElementById('m-ct').value,unidade:document.getElementById('m-un').value,qtd:Number(document.getElementById('m-qt').value)||0,minimo:Number(document.getElementById('m-mn').value)||0,valor:Number(document.getElementById('m-vl').value)||0,local:document.getElementById('m-lc').value.trim(),fornecedor:document.getElementById('m-fn').value.trim(),obs:document.getElementById('m-ob').value.trim()};
+  const obraId=Number(document.getElementById('m-obra').value)||curObra.id;
+  const pl={obra_id:obraId,codigo:document.getElementById('m-cd').value.trim()||('MAT'+Date.now()),nome,categoria:document.getElementById('m-ct').value,unidade:document.getElementById('m-un').value,qtd:Number(document.getElementById('m-qt').value)||0,minimo:Number(document.getElementById('m-mn').value)||0,valor:Number(document.getElementById('m-vl').value)||0,local:document.getElementById('m-lc').value.trim(),fornecedor:document.getElementById('m-fn').value.trim(),obs:document.getElementById('m-ob').value.trim()};
   let err;
   if(editId){const r=await sb.from('materiais').update(pl).eq('id',editId);err=r.error;if(!err){const i=mats.findIndex(x=>x.id===editId);if(i>=0)mats[i]={...mats[i],...pl};}}
-  else{const r=await sb.from('materiais').insert(pl).select().single();err=r.error;if(!err)mats.push(r.data);}
+  else{const r=await sb.from('materiais').insert(pl).select().single();err=r.error;if(!err&&r.data)mats.push(r.data);}
   btn.disabled=false;btn.textContent='💾 Salvar';
   if(err){showToast('❌ '+err.message);return;}
   showToast(editId?'✅ Material atualizado!':'✅ Material cadastrado!');
@@ -981,12 +809,18 @@ async function delMat(id){
   await sb.from('movimentos').delete().eq('material_id',id);
   const{error}=await sb.from('materiais').delete().eq('id',id);
   if(error){showToast('❌ '+error.message);return;}
-  mats=mats.filter(m=>m.id!==id);
-  movs=movs.filter(m=>m.material_id!==id);
+  mats=mats.filter(m=>m.id!==id);movs=movs.filter(m=>m.material_id!==id);
   renderMat();renderDash();showToast('🗑️ Material e movimentos removidos.');
 }
 
-// ── AUTOCOMPLETE ──
+function prtMat(){
+  const q=(document.getElementById('b-mat')?.value||'').toLowerCase();const cat=document.getElementById('f-cat')?.value||'';
+  const fil=mats.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Relatório de Materiais')}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${fil.length} itens</div></div></div><table><thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead><tbody>${fil.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
+  pdfAbrir(html,'📄 Relatório de Materiais');
+}
+
+// ── AUTOCOMPLETE ──────────────────────────────────────
 function acSearch(){
   const q=document.getElementById('mv-q').value.toLowerCase().trim();
   const l=document.getElementById('mv-ac');acIdx=-1;
@@ -1001,8 +835,7 @@ function acSel(id){
   document.getElementById('mv-id').value=id;document.getElementById('mv-q').value='';
   document.getElementById('mv-ac').style.display='none';
   const b=document.getElementById('mv-bd');b.style.display='block';
-  const _n=m.nome.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  b.innerHTML=`<div class="mbadge"><span>✅ <strong>${_n}</strong> <span class="cm fs12">(${m.qtd} ${m.unidade} em estoque)</span></span><button onclick="acClr()">✕</button></div>`;
+  b.innerHTML=`<div class="mbadge"><span>✅ <strong>${m.nome}</strong> <span class="cm fs12">(${m.qtd} ${m.unidade})</span></span><button onclick="acClr()">✕</button></div>`;
 }
 function acClr(){document.getElementById('mv-id').value='';document.getElementById('mv-q').value='';document.getElementById('mv-bd').style.display='none';document.getElementById('mv-ac').style.display='none';document.getElementById('mv-q').focus();}
 function acKey(e){
@@ -1015,23 +848,14 @@ function acKey(e){
   if(acIdx>=0)its[acIdx].scrollIntoView({block:'nearest'});
 }
 document.addEventListener('click',e=>{if(!e.target.closest('.acw')){const l=document.getElementById('mv-ac');if(l)l.style.display='none';}});
+function verMovMat(id,nome){const nb=document.querySelector('.nb[onclick*="movimentacoes"]');goPage('movimentacoes',nb);setTimeout(()=>{const inp=document.getElementById('b-mov');if(inp){inp.value=nome;renderMov();}},100);}
 
-// ── VER MOVIMENTAÇÕES DO MATERIAL ──
-function verMovMat(id, nome){
-  const nb=document.querySelector('.nb[onclick*="movimentacoes"]');
-  goPage('movimentacoes', nb);
-  setTimeout(()=>{
-    const inp=document.getElementById('b-mov');
-    if(inp){inp.value=nome;renderMov();}
-  }, 100);
-}
-
-// ── MOVIMENTAÇÕES ──
+// ── MOVIMENTAÇÕES ──────────────────────────────────────
 function openMovModal(tipo){
   document.getElementById('mv-tp').value=tipo;
   document.getElementById('mv-t').textContent=tipo==='entrada'?'📥 Registrar Entrada':'📤 Registrar Saída';
   document.getElementById('mv-qt').value=1;document.getElementById('mv-ob').value='';
-  document.getElementById('mv-rs').value=cfg.responsavel||curUser.nome||'';
+  document.getElementById('mv-rs').value=cfg.responsavel||'Responsável';
   acClr();openModal('modal-mov');setTimeout(()=>document.getElementById('mv-q').focus(),200);
 }
 
@@ -1044,7 +868,7 @@ async function saveMov(){
   const ns=tipo==='entrada'?Number(mat.qtd)+qtd:Number(mat.qtd)-qtd;
   const{error:e1}=await sb.from('materiais').update({qtd:ns}).eq('id',mid);
   if(e1){showToast('❌ '+e1.message);btn.disabled=false;btn.textContent='✅ Confirmar';return;}
-  const{data:mv,error:e2}=await sb.from('movimentos').insert({user_id:curUser.id,tipo,material_id:mid,material_nome:mat.nome,qtd,responsavel:document.getElementById('mv-rs').value||curUser.nome,obs:document.getElementById('mv-ob').value,saldo:ns}).select().single();
+  const{data:mv,error:e2}=await sb.from('movimentos').insert({obra_id:curObra.id,tipo,material_id:mid,material_nome:mat.nome,qtd,responsavel:document.getElementById('mv-rs').value||cfg.responsavel,obs:document.getElementById('mv-ob').value,saldo:ns}).select().single();
   btn.disabled=false;btn.textContent='✅ Confirmar';
   if(e2){showToast('❌ '+e2.message);return;}
   mat.qtd=ns;if(mv)movs.unshift(mv);
@@ -1064,31 +888,15 @@ async function delMov(id){
 function renderMov(){
   const q=(document.getElementById('b-mov')?.value||'').toLowerCase();const tp=document.getElementById('f-mov')?.value||'';
   const fil=movs.filter(m=>(!q||(m.material_nome||'').toLowerCase().includes(q)||(m.responsavel||'').toLowerCase().includes(q))&&(!tp||m.tipo===tp));
-  document.getElementById('tb-mov').innerHTML=fil.length?fil.map(m=>`<tr><td class="cm fs11">${fd(m.created_at)}</td><td><span class="tag ${m.tipo==='entrada'?'tin':'tout'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</span></td><td class="fw6">${m.material_nome||'-'}</td><td class="fw7 ${m.tipo==='entrada'?'cg':'cr'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td class="cm fs12">${m.responsavel||'-'}</td><td class="cm fs11">${m.obs||'-'}</td><td class="fw6">${m.saldo??'-'}</td><td><button class="btn bd sm" onclick="delMov(${m.id})" title="Excluir e reverter">🗑️</button></td></tr>`).join(''):`<tr><td colspan="8"><div class="empty">Nenhuma movimentação encontrada.</div></td></tr>`;
+  document.getElementById('tb-mov').innerHTML=fil.length?fil.map(m=>`<tr><td class="cm fs11">${fd(m.created_at)}</td><td><span class="tag ${m.tipo==='entrada'?'tin':'tout'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</span></td><td class="fw6">${m.material_nome||'-'}</td><td class="fw7 ${m.tipo==='entrada'?'cg':'cr'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td class="cm fs12">${m.responsavel||'-'}</td><td class="cm fs11">${m.obs||'-'}</td><td class="fw6">${m.saldo??'-'}</td><td><button class="btn bd sm" onclick="delMov(${m.id})">🗑️</button></td></tr>`).join(''):`<tr><td colspan="8"><div class="empty">Nenhuma movimentação encontrada.</div></td></tr>`;
 }
 
-// ── RELATÓRIOS ──
-function getMovsVisiveis(){
-  if(curUser.role!=='admin'||!adminRelUser)return movs;
-  return movs.filter(m=>m.user_id===adminRelUser);
-}
-
-function onRelUsrChange(){
-  const v=document.getElementById('rel-usr-sel').value;
-  adminRelUser=v?Number(v):null;
-  const u=allUsers.find(x=>x.id===adminRelUser);
-  document.getElementById('rel-usr-info').textContent=u?`${movs.filter(m=>m.user_id===adminRelUser).length} movimentos`:'';
-  renderRel();
-}
-
+// ── RELATÓRIOS ──────────────────────────────────────────
 function getFilMov(){
   const tp=document.getElementById('rf-tp')?.value||'';const pr=Number(document.getElementById('rf-pr')?.value||0);const pe=Number(document.getElementById('rf-pe')?.value||0);
-  const catFil=document.getElementById('rf-cat-fil')?.value||'';
-  const lim=pe?new Date(Date.now()-pe*86400000):null;
-  const base=getMovsVisiveis();
-  return base.filter(m=>{
-    if(tp&&m.tipo!==tp)return false;
-    if(pr&&m.material_id!==pr)return false;
+  const catFil=document.getElementById('rf-cat-fil')?.value||'';const lim=pe?new Date(Date.now()-pe*86400000):null;
+  return movs.filter(m=>{
+    if(tp&&m.tipo!==tp)return false;if(pr&&m.material_id!==pr)return false;
     if(lim&&new Date(m.created_at)<lim)return false;
     if(catFil){const mat=mats.find(x=>x.id===m.material_id);if(!mat||mat.categoria!==catFil)return false;}
     return true;
@@ -1097,32 +905,178 @@ function getFilMov(){
 
 function renderRel(){
   const sp=document.getElementById('rf-pr');
-  if(sp){const cv=sp.value;const base=getMovsVisiveis();const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;sp.innerHTML='<option value="">Todos</option>'+uMats.map(m=>`<option value="${m.id}"${String(m.id)===cv?' selected':''}>${m.nome}</option>`).join('');if(cv)sp.value=cv;}
-  // Popular select de categoria
+  if(sp){const cv=sp.value;sp.innerHTML='<option value="">Todos</option>'+mats.map(m=>`<option value="${m.id}"${String(m.id)===cv?' selected':''}>${m.nome}</option>`).join('');if(cv)sp.value=cv;}
   const sc=document.getElementById('rf-cat-fil');
   if(sc){const cv2=sc.value;sc.innerHTML='<option value="">Todas as categorias</option>'+cats.map(ct=>`<option value="${ct}"${ct===cv2?' selected':''}>${ct}</option>`).join('');if(cv2)sc.value=cv2;}
-  const fil=getFilMov();const tp='';
-  let t='📊 ';if(tp==='entrada')t+='Entradas';else if(tp==='saida')t+='Saídas';else t+='Todos os Movimentos';
-  const te=document.getElementById('rf-tit');if(te)te.textContent=t;
+  const fil=getFilMov();
   const tb=document.getElementById('rf-tb');
   if(tb)tb.innerHTML=fil.length?fil.map(m=>`<tr><td class="cm fs11">${fd(m.created_at)}</td><td><span class="tag ${m.tipo==='entrada'?'tin':'tout'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</span></td><td class="fw6">${m.material_nome||'-'}</td><td class="fw7 ${m.tipo==='entrada'?'cg':'cr'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td class="cm fs12">${m.responsavel||'-'}</td><td class="cm fs11">${m.obs||'-'}</td><td class="fw6">${m.saldo??'-'}</td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">Sem resultados.</div></td></tr>`;
-  const uMats2=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
-  const ct={};uMats2.forEach(m=>{if(!ct[m.categoria])ct[m.categoria]={n:0,v:0,b:0};ct[m.categoria].n++;ct[m.categoria].v+=Number(m.qtd)*Number(m.valor);if(m.qtd<=m.minimo)ct[m.categoria].b++;});
+  const ct={};mats.forEach(m=>{if(!ct[m.categoria])ct[m.categoria]={n:0,v:0,b:0};ct[m.categoria].n++;ct[m.categoria].v+=Number(m.qtd)*Number(m.valor);if(m.qtd<=m.minimo)ct[m.categoria].b++;});
   const rc=document.getElementById('rf-cat');if(rc)rc.innerHTML=Object.entries(ct).map(([c,d])=>`<div style="display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap"><span class="fw7 cb2" style="min-width:110px">${c}</span><span class="cm fs12">${d.n} itens</span><span class="cg fw7">${fm(d.v)}</span>${d.b?`<span class="tag tlo">${d.b} alerta${d.b>1?'s':''}</span>`:''}</div>`).join('')||'<p class="cm fs12">Sem dados.</p>';
-  // Lista de categorias clicáveis
   const rl=document.getElementById('rel-cats-lista');
   if(rl)rl.innerHTML=cats.map(cat=>{const n=mats.filter(m=>m.categoria===cat).length;return`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bd);cursor:pointer" onclick="prtCatIndividual('${cat.replace(/'/g,"\\'")}')"><span class="fw6">${cat}</span><div class="flex g8"><span class="cm fs12">${n} itens</span><span class="cg fs12">🖨️ PDF →</span></div></div>`;}).join('')||'<p class="cm fs12">Nenhuma categoria.</p>';
 }
 
-function expMovFil(tf){const d=tf?getMovsVisiveis().filter(m=>m.tipo===tf):getFilMov();dlCSV([['Data','Tipo','Material','Qtd','Responsavel','Obs','Saldo'],...d.map(m=>[fd(m.created_at),m.tipo,m.material_nome,m.qtd,m.responsavel,m.obs,m.saldo])],`mtec_${tf||'movimentos'}`);showToast('✅ CSV exportado!');}
+function expMovFil(tf){const d=tf?movs.filter(m=>m.tipo===tf):getFilMov();dlCSV([['Data','Tipo','Material','Qtd','Responsavel','Obs','Saldo'],...d.map(m=>[fd(m.created_at),m.tipo,m.material_nome,m.qtd,m.responsavel,m.obs,m.saldo])],`mtec_${tf||'movimentos'}`);showToast('✅ CSV exportado!');}
 
-// ── PDF PANEL ──
-function pdfAbrir(html, titulo){
+// ── OBRAS ────────────────────────────────────────────────
+function renderObras(){
+  const el=document.getElementById('obras-lista');if(!el)return;
+  if(!allObras.length){el.innerHTML='<div class="empty">Nenhuma obra cadastrada.</div>';return;}
+  el.innerHTML=allObras.map(o=>`
+    <div class="urow">
+      <div class="uinfo">
+        <div class="uav">🏗️</div>
+        <div>
+          <div class="fw6">${o.nome}${o.id===curObra?.id?' <span class="tag tok" style="font-size:10px">Atual</span>':''}</div>
+          ${o.descricao?`<div class="cm fs12">📍 ${o.descricao}</div>`:''}
+        </div>
+      </div>
+      <div class="flex g8">
+        <button class="btn bg sm" onclick="abrirModalObra(${JSON.stringify(o).replace(/"/g,'&quot;')})">✏️</button>
+        ${allObras.length>1?`<button class="btn bd sm" onclick="delObra(${o.id},'${o.nome.replace(/'/g,"\\'")}')">🗑️</button>`:'<span class="cm fs12">Única</span>'}
+      </div>
+    </div>`).join('');
+}
+
+function abrirModalObra(o){
+  document.getElementById('mo-id').value=o?o.id:'';
+  document.getElementById('mo-titulo').textContent=o?'✏️ Editar Obra':'🏗️ Nova Obra';
+  document.getElementById('mo-nome').value=o?o.nome:'';
+  document.getElementById('mo-desc').value=o?o.descricao||'':'';
+  document.getElementById('mo-err').style.display='none';
+  openModal('modal-obra');
+}
+
+async function salvarObra(){
+  const nome=document.getElementById('mo-nome').value.trim();
+  if(!nome){document.getElementById('mo-err').textContent='Informe o nome da obra.';document.getElementById('mo-err').style.display='block';return;}
+  const id=document.getElementById('mo-id').value;
+  const pl={nome,descricao:document.getElementById('mo-desc').value.trim()};
+  let error,data;
+  if(id){const r=await sb.from('obras').update(pl).eq('id',id).select().single();error=r.error;data=r.data;if(!error){const i=allObras.findIndex(o=>String(o.id)===String(id));if(i>=0)allObras[i]={...allObras[i],...pl};if(curObra&&String(curObra.id)===String(id)){curObra={...curObra,...pl};document.getElementById('h-obra-nome').textContent=curObra.nome;}}}
+  else{const r=await sb.from('obras').insert(pl).select().single();error=r.error;data=r.data;if(!error&&data)allObras.push(data);}
+  if(error){document.getElementById('mo-err').textContent='Erro: '+error.message;document.getElementById('mo-err').style.display='block';return;}
+  closeModal('modal-obra');renderObras();showToast(id?'✅ Obra atualizada!':'✅ Obra criada!');
+}
+
+async function delObra(id,nome){
+  if(!confirm(`Excluir a obra "${nome}"?\n\nTodos os materiais e movimentos serão removidos permanentemente.`))return;
+  await sb.from('movimentos').delete().eq('obra_id',id);
+  await sb.from('materiais').delete().eq('obra_id',id);
+  await sb.from('configuracoes').delete().eq('obra_id',id);
+  const{error}=await sb.from('obras').delete().eq('id',id);
+  if(error){showToast('❌ '+error.message);return;}
+  allObras=allObras.filter(o=>o.id!==id);
+  if(curObra&&curObra.id===id){localStorage.removeItem('mtec_obra_id');trocarObra();return;}
+  renderObras();showToast('🗑️ Obra removida.');
+}
+
+// ── CONFIG ───────────────────────────────────────────────
+function renderCfg(){
+  document.getElementById('ce').value=cfg.empresa||'MTEC';
+  const _cnpj=document.getElementById('cnpj');if(_cnpj)_cnpj.value=cfg.cnpj||'';
+  const _cend=document.getElementById('cend');if(_cend)_cend.value=cfg.endereco||'';
+  const _ctel=document.getElementById('ctel');if(_ctel)_ctel.value=cfg.telefone||'';
+  document.getElementById('cr').value=cfg.responsavel||'Responsável';
+  document.getElementById('cm').value=cfg.minimo||5;
+  // Popular select de obras para categorias
+  const ncObra=document.getElementById('nc-obra');
+  if(ncObra){ncObra.innerHTML=allObras.map(o=>`<option value="${o.id}"${o.id===curObra?.id?' selected':''}>${o.nome}</option>`).join('');}
+  renderCatsList();
+}
+
+function renderCatsList(){
+  const ncObra=document.getElementById('nc-obra');
+  const oid=ncObra?Number(ncObra.value):curObra?.id;
+  const obraCats=allCats[oid]||[];
+  const obraNome=allObras.find(o=>o.id===oid)?.nome||'';
+  document.getElementById('lc').innerHTML=obraCats.length?obraCats.map((c,i)=>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd)">
+      <span class="fw6">${c}</span>
+      <button class="btn bd sm" onclick="rmCat(${i},${oid})">✕</button>
+    </div>`).join(''):`<p class="cm fs12">Nenhuma categoria para ${obraNome||'esta obra'}.</p>`;
+}
+
+async function addCat(){
+  const ncObra=document.getElementById('nc-obra');
+  const oid=Number(ncObra?.value)||curObra?.id;
+  const v=document.getElementById('nc').value.trim();if(!v)return;
+  const oc=allCats[oid]||[];
+  if(oc.includes(v)){showToast('⚠️ Categoria já existe!');return;}
+  oc.push(v);allCats[oid]=oc;
+  if(oid===curObra?.id)cats=oc;
+  document.getElementById('nc').value='';
+  await sb.from('configuracoes').upsert([{obra_id:oid,chave:'cats',valor:JSON.stringify(oc)}],{onConflict:'obra_id,chave'});
+  renderCatsList();showToast('✅ Categoria adicionada!');
+}
+
+async function rmCat(i,oid){
+  const oc=allCats[oid]||[];
+  if(mats.some(m=>m.obra_id===oid&&m.categoria===oc[i])){showToast('⚠️ Há materiais nessa categoria!');return;}
+  oc.splice(i,1);allCats[oid]=oc;
+  if(oid===curObra?.id)cats=oc;
+  await sb.from('configuracoes').upsert([{obra_id:oid,chave:'cats',valor:JSON.stringify(oc)}],{onConflict:'obra_id,chave'});
+  renderCatsList();
+}
+
+async function saveCfg(){
+  cfg.empresa=document.getElementById('ce').value||'MTEC';
+  cfg.cnpj=(document.getElementById('cnpj')?.value||'').trim();
+  cfg.endereco=(document.getElementById('cend')?.value||'').trim();
+  cfg.telefone=(document.getElementById('ctel')?.value||'').trim();
+  cfg.responsavel=document.getElementById('cr').value||'Responsável';
+  cfg.minimo=Number(document.getElementById('cm').value)||5;
+  await sb.from('configuracoes').upsert([
+    {obra_id:0,chave:'empresa',valor:JSON.stringify(cfg)},
+    {obra_id:curObra.id,chave:'config',valor:JSON.stringify(cfg)}
+  ],{onConflict:'obra_id,chave'});
+  document.getElementById('h-empresa-sub').textContent=cfg.empresa;
+  showToast('✅ Configurações salvas!');
+}
+
+// ── IMPORTAÇÃO CSV ────────────────────────────────────
+function impCSV(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const lines=e.target.result.split('\n').filter(l=>l.trim());
+    if(lines.length<2){showToast('⚠️ CSV vazio ou inválido');return;}
+    const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+    let imp=0,err=0;
+    for(let i=1;i<lines.length;i++){
+      const vals=lines[i].match(/(".*?"|[^,]+)/g)||[];
+      const v=vals.map(x=>x.replace(/^"|"$/g,'').trim());
+      const nome=v[headers.indexOf('nome')]||v[1]||'';if(!nome)continue;
+      const pl={obra_id:curObra.id,codigo:v[headers.indexOf('codigo')]||v[0]||('MAT'+Date.now()+i),nome,categoria:v[headers.indexOf('categoria')]||v[2]||cats[0]||'Geral',qtd:Number(v[headers.indexOf('quantidade')]||v[3])||0,unidade:v[headers.indexOf('unidade')]||v[4]||'UN',minimo:Number(v[headers.indexOf('minimo')]||v[5])||cfg.minimo||5,valor:Number(v[headers.indexOf('valor unit.')]||v[6])||0,local:v[headers.indexOf('localizacao')]||v[9]||'',fornecedor:v[headers.indexOf('fornecedor')]||v[10]||'',obs:''};
+      const{data,error}=await sb.from('materiais').insert(pl).select().single();
+      if(!error&&data){mats.push(data);imp++;}else{err++;}
+    }
+    input.value='';renderMat();renderDash();
+    showToast(`✅ ${imp} importados${err?', '+err+' erros':''}`);
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+// ── EXPORTS ──────────────────────────────────────────
+function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];const rows=[h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])];const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,'mtec_materiais.csv','text/csv;charset=utf-8;');showToast('✅ CSV exportado!');}
+async function dlArquivo(conteudo,nomeArquivo,mime){
+  const nomeFinal=nomeArquivo+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  if(window.Capacitor&&window.Capacitor.isNativePlatform()){
+    try{const{Filesystem,Directory}=await Promise.all([import('@capacitor/filesystem').then(m=>m.Filesystem),import('@capacitor/filesystem').then(m=>m.Directory)]);const b64=btoa(unescape(encodeURIComponent(conteudo)));await Filesystem.writeFile({path:nomeFinal,data:b64,directory:Directory.Documents,encoding:'base64'});showToast('✅ Salvo em: Documentos/'+nomeFinal);return;}catch(e){}
+    const blob=new Blob([conteudo],{type:mime});const url=URL.createObjectURL(blob);window.open(url,'_blank');showToast('✅ Arquivo gerado — salve manualmente');return;
+  }
+  const b=new Blob(['\ufeff'+conteudo],{type:mime});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=nomeFinal;document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+}
+function dlCSV(data,fn){const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,fn+'.csv','text/csv;charset=utf-8;');}
+function expJSON(){dlArquivo(JSON.stringify({obra:curObra?.nome,mats,movs,cfg,cats},null,2),'mtec_backup_'+Date.now()+'.json','application/json');showToast('💾 Backup salvo!');}
+
+// ── PDF ──────────────────────────────────────────────
+function pdfAbrir(html,titulo){
   const panel=document.getElementById('pdf-panel');
   const frame=document.getElementById('pdf-frame');
   document.getElementById('pdf-title').textContent=titulo;
   panel.style.display='flex';
-  // Escrever HTML no iframe
   const doc=frame.contentDocument||frame.contentWindow.document;
   doc.open();doc.write(html);doc.close();
 }
@@ -1132,294 +1086,43 @@ function pdfFechar(){
   const doc=frame.contentDocument||frame.contentWindow.document;
   doc.open();doc.write('');doc.close();
 }
-function pdfPrint(){
-  document.getElementById('pdf-frame').contentWindow.print();
+function pdfPrint(){document.getElementById('pdf-frame').contentWindow.print();}
+function pdfPrintFechar(){
+  const frame=document.getElementById('pdf-frame');
+  frame.contentWindow.print();
+  // Fechar após o print dialog (pequeno delay para não cortar)
+  setTimeout(()=>pdfFechar(),500);
 }
 
 function _pdfCabecalho(titulo){
-  const e=cfg.empresa||'MTEC';
   const info=[cfg.cnpj,cfg.endereco,cfg.telefone].filter(Boolean).join(' | ');
-  return `<div class="hdr">
-    <div>
-      <h1>🏭 ${e}</h1>
-      ${info?`<div style="font-size:9px;color:#555;margin-top:2px">${info}</div>`:''}
-      <div style="font-size:12px;font-weight:600;color:#333;margin-top:4px">${titulo}</div>
-    </div>`;
+  return `<div class="hdr"><div><h1>🏭 ${cfg.empresa||'MTEC'}</h1>${info?`<div style="font-size:9px;color:#555;margin-top:2px">${info}</div>`:''}<div style="font-size:12px;font-weight:600;color:#333;margin-top:4px">${titulo}</div><div style="font-size:10px;color:#777;margin-top:2px">Obra: ${curObra?.nome||''}</div></div>`;
 }
 function _pdfStyle(){
-  return `*{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}
-  .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #00aa33}
-  .hdr h1{font-size:18px;color:#00aa33;font-weight:800}
-  .hdr .meta{text-align:right;font-size:10px;color:#666}
-  table{width:100%;border-collapse:collapse;font-size:11px}
-  th{background:#00aa33;color:#fff;padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px}
-  td{padding:6px 9px;border-bottom:1px solid #e8e8e8}
-  tr:nth-child(even) td{background:#fafafa}
-  .in{color:#0077cc;font-weight:700}.out{color:#cc3300;font-weight:700}
-  .ok{color:#00aa33}.lo{color:#ff8c00}.ot{color:#ff4444}
-  .ftr{margin-top:16px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px}
-  @media print{@page{margin:15mm}}`;
+  return `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #00aa33}.hdr h1{font-size:18px;color:#00aa33;font-weight:800}.hdr .meta{text-align:right;font-size:10px;color:#666}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#00aa33;color:#fff;padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px}td{padding:6px 9px;border-bottom:1px solid #e8e8e8}tr:nth-child(even) td{background:#fafafa}.in{color:#0077cc;font-weight:700}.out{color:#cc3300;font-weight:700}.ok{color:#00aa33}.lo{color:#ff8c00}.ot{color:#ff4444}.ftr{margin-top:16px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px}@media print{@page{margin:15mm}}`;
 }
 
 function prtMov(tf){
-  const empresa=cfg.empresa||'MTEC';
-  const catFil=document.getElementById('rf-cat-fil')?.value||'';
-  const d=tf?getMovsVisiveis().filter(m=>m.tipo===tf):getFilMov();
+  const d=tf?movs.filter(m=>m.tipo===tf):getFilMov();
   const tit=tf==='entrada'?'Entradas':tf==='saida'?'Saídas':'Movimentos';
-  const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
   const totE=d.filter(m=>m.tipo==='entrada').reduce((s,m)=>s+Number(m.qtd),0);
   const totS=d.filter(m=>m.tipo==='saida').reduce((s,m)=>s+Number(m.qtd),0);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - ${tit}</title><style>${_pdfStyle()}</style></head><body>
-  ${_pdfCabecalho('Relatório de ' + tit)}
-    <div class="meta">
-      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
-      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${d.length} registros${!tf?` | ▲ ${totE} entradas / ▼ ${totS} saídas`:''}${catFil?' · Categoria: '+catFil:''}</div>
-    </div>
-  </div>
-  <table>
-    <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Responsável</th><th>Observação</th><th>Saldo</th></tr></thead>
-    <tbody>${d.map(m=>`<tr><td>${fd(m.created_at)}</td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</td><td><strong>${m.material_nome||''}</strong></td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td>${m.responsavel||'-'}</td><td>${m.obs||'-'}</td><td><strong>${m.saldo??'-'}</strong></td></tr>`).join('')}</tbody>
-  </table>
-  <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  
-  </body></html>`;
-  pdfAbrir(html,'📊 Relatório de ' + tit);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Relatório de '+tit)}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${d.length} registros${!tf?` | ▲ ${totE} entradas / ▼ ${totS} saídas`:''}</div></div></div><table><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Responsável</th><th>Observação</th><th>Saldo</th></tr></thead><tbody>${d.map(m=>`<tr><td>${fd(m.created_at)}</td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</td><td><strong>${m.material_nome||''}</strong></td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td>${m.responsavel||'-'}</td><td>${m.obs||'-'}</td><td><strong>${m.saldo??'-'}</strong></td></tr>`).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
+  pdfAbrir(html,'📊 '+tit);
+}
+
+function prtInv(){
+  const catFil=document.getElementById('rf-cat-fil')?.value||'';
+  const base=catFil?mats.filter(m=>m.categoria===catFil):mats;
+  const totVal=base.reduce((s,m)=>s+Number(m.qtd)*Number(m.valor),0);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Inventário Geral de Materiais')}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${base.length} itens${catFil?' · Cat: '+catFil:''} | Valor total: ${fm(totVal)}</div></div></div><table><thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead><tbody>${base.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
+  pdfAbrir(html,'📋 Inventário Geral');
 }
 
 function prtCatIndividual(cat){
-  const empresa=cfg.empresa||'MTEC';
-  const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
-  const itens=uMats.filter(m=>m.categoria===cat);
-  const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - ${cat}</title><style>${_pdfStyle()}</style></head><body>
-  ${_pdfCabecalho('Categoria: ' + cat)}
-    <div class="meta">
-      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
-      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${itens.length} itens na categoria</div>
-    </div>
-  </div>
-  <table>
-    <thead><tr><th>Nome</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Localização</th><th>Status</th></tr></thead>
-    <tbody>${itens.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong>${m.obs?`<br><small style="color:#888">${m.obs}</small>`:''}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td>${m.local||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
-  </table>
-  <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  </body></html>`;
-  pdfAbrir(html,'🏷️ Categoria: ' + cat);
-}
-
-function prtCats(){
-  const empresa=cfg.empresa||'MTEC';
-  const catFil=document.getElementById('rf-cat-fil')?.value||'';
-  const uMats=adminRelUser?mats.filter(m=>m.user_id===adminRelUser):mats;
-  const filtered=catFil?uMats.filter(m=>m.categoria===catFil):uMats;
-  // Agrupar materiais por categoria
-  const grupos={};filtered.forEach(m=>{if(!grupos[m.categoria])grupos[m.categoria]=[];grupos[m.categoria].push(m);});
-  const usrLabel=adminRelUser?(allUsers.find(u=>u.id===adminRelUser)?.nome||''):'Todos';
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MTEC - Por Categoria</title><style>${_pdfStyle()}
-  .cat-titulo{background:#0055aa;color:#fff;padding:8px 12px;font-size:12px;font-weight:700;margin-top:18px;border-radius:4px 4px 0 0}
-  .cat-titulo:first-child{margin-top:0}
-  </style></head><body>
-  ${_pdfCabecalho('Relatório por Categoria')}
-    <div class="meta">
-      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
-      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${filtered.length} itens${catFil?' · Categoria: '+catFil:''}</div>
-    </div>
-  </div>
-  ${Object.entries(grupos).map(([cat,itens])=>`
-    <div class="cat-titulo">🏷️ ${cat} — ${itens.length} itens</div>
-    <table>
-      <thead><tr><th>Nome</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead>
-      <tbody>${itens.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
-    </table>
-  `).join('')}
-  <div class="ftr">MTEC Estoque · ${empresa} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  </body></html>`;
-  pdfAbrir(html,'🏷️ Relatório por Categoria');
-}
-
-// ── USUÁRIOS ──
-function renderUsers(){
-  if(curUser.role!=='admin')return;
-  document.getElementById('ul').innerHTML=allUsers.length?allUsers.map(u=>`<div class="urow"><div class="uinfo" style="cursor:pointer" onclick="abrirEditUser(${JSON.stringify(u).replace(/'/g,'\\'')})"><div class="uav">${u.role==='admin'?'👑':'👤'}</div><div><div class="fw6">${u.nome}</div><div class="cm fs12">@${u.username} · <span class="tag ${u.role==='admin'?'tadm':'tusr'}">${u.role==='admin'?'Admin':'Usuário'}</span></div></div></div><div class="flex g8"><button class="btn bg sm" onclick="abrirEditUser(${JSON.stringify(u).replace(/'/g,'\\'')})">✏️</button>${u.username!=='administrador'?`<button class="btn bd sm" onclick="delUser(${u.id},'${u.username}')">🗑️</button>`:'<span class="cm fs12">Principal</span>'}</div></div>`).join(''):'<p class="cm fs12">Nenhum usuário.</p>';
-  // Admin logado pode criar outro admin — adiciona opção dinamicamente
-  const selR=document.getElementById('nu-r');
-  if(selR&&!selR.querySelector('[value="admin"]')){
-    const o=document.createElement('option');o.value='admin';o.textContent='Administrador';
-    selR.appendChild(o);
-  }
-}
-function abrirEditUser(u){
-  document.getElementById('eu-id').value=u.id;
-  document.getElementById('eu-n').value=u.nome;
-  document.getElementById('eu-p').value='';
-  document.getElementById('eu-r').value=u.role;
-  openModal('modal-usr');
-}
-async function salvarUser(){
-  const id=Number(document.getElementById('eu-id').value);
-  const n=document.getElementById('eu-n').value.trim();
-  const p=document.getElementById('eu-p').value;
-  const r=document.getElementById('eu-r').value;
-  if(!n){showToast('⚠️ Nome obrigatório');return;}
-  const pl={nome:n,role:r};
-  if(p){if(p.length<4){showToast('⚠️ Senha mín. 4 caracteres');return;}pl.senha=hs(p);}
-  const{error}=await sb.from('usuarios').update(pl).eq('id',id);
-  if(error){showToast('❌ '+error.message);return;}
-  const u=allUsers.find(x=>x.id===id);
-  if(u){u.nome=n;u.role=r;}
-  closeModal('modal-usr');renderUsers();showToast('✅ Usuário atualizado!');
-}
-async function criarUser(){
-  const u=document.getElementById('nu-u').value.trim().toLowerCase();const n=document.getElementById('nu-n').value.trim();const p=document.getElementById('nu-p').value;const r=document.getElementById('nu-r').value;
-  if(!u||!n||!p){showToast('⚠️ Preencha todos os campos!');return;}
-  const{data,error}=await sb.from('usuarios').insert({username:u,nome:n,senha:hs(p),role:r}).select().single();
-  if(error){showToast('❌ '+(error.message.includes('unique')?'Usuário já existe!':error.message));return;}
-  allUsers.push(data);['nu-u','nu-n','nu-p'].forEach(id=>document.getElementById(id).value='');
-  renderUsers();showToast('✅ Usuário criado!');
-}
-async function delUser(id,uname){
-  if(!confirm(`Excluir @${uname} e todos os seus dados?`))return;
-  await sb.from('movimentos').delete().eq('user_id',id);
-  await sb.from('materiais').delete().eq('user_id',id);
-  await sb.from('configuracoes').delete().eq('user_id',id);
-  const{error}=await sb.from('usuarios').delete().eq('id',id);
-  if(error){showToast('❌ '+error.message);return;}
-  allUsers=allUsers.filter(u=>u.id!==id);renderUsers();showToast('🗑️ Usuário removido.');
-}
-
-// ── CONFIG ──
-function renderCfg(){
-  document.getElementById('ce').value=cfg.empresa||'MTEC';
-  const _cnpj=document.getElementById('cnpj');if(_cnpj)_cnpj.value=cfg.cnpj||'';
-  const _cend=document.getElementById('cend');if(_cend)_cend.value=cfg.endereco||'';
-  const _ctel=document.getElementById('ctel');if(_ctel)_ctel.value=cfg.telefone||'';
-  document.getElementById('cr').value=cfg.responsavel||'Administrador';
-  document.getElementById('cm').value=cfg.minimo||5;
-  const isAdm=curUser.role==='admin';
-  document.getElementById('lc').innerHTML=cats.map((c,i)=>
-    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd)">
-      <span class="fw6">${c}</span>
-      ${isAdm?`<button class="btn bd sm" onclick="rmCat(${i})">✕</button>`:''}
-    </div>`).join('');
-}
-async function addCat(){const v=document.getElementById('nc').value.trim();if(!v)return;if(cats.includes(v)){showToast('⚠️ Categoria já existe!');return;}cats.push(v);document.getElementById('nc').value='';await saveCfgDB();renderCfg();showToast('✅ Categoria adicionada!');}
-async function rmCat(i){if(mats.some(m=>m.categoria===cats[i])){showToast('⚠️ Há materiais nessa categoria!');return;}cats.splice(i,1);await saveCfgDB();renderCfg();}
-async function saveCfg(){
-  cfg.empresa=document.getElementById('ce').value||'MTEC';
-  cfg.cnpj=(document.getElementById('cnpj')?.value||'').trim();
-  cfg.endereco=(document.getElementById('cend')?.value||'').trim();
-  cfg.telefone=(document.getElementById('ctel')?.value||'').trim();
-  cfg.responsavel=document.getElementById('cr').value||'Administrador';
-  cfg.minimo=Number(document.getElementById('cm').value)||5;
-  await saveCfgDB();showToast('✅ Configurações salvas!');
-}
-async function saveCfgDB(){await sb.from('configuracoes').upsert([{user_id:curUser.id,chave:'config',valor:JSON.stringify(cfg)},{user_id:curUser.id,chave:'cats',valor:JSON.stringify(cats)}],{onConflict:'user_id,chave'});}
-
-// ── IMPORTAÇÃO CSV ──
-function impCSV(input){
-  const file=input.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=async function(e){
-    const lines=e.target.result.split('
-').filter(l=>l.trim());
-    if(lines.length<2){showToast('⚠️ CSV vazio ou inválido');return;}
-    const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
-    let imp=0,err=0;
-    for(let i=1;i<lines.length;i++){
-      const vals=lines[i].match(/(".*?"|[^,]+)/g)||[];
-      const v=vals.map(x=>x.replace(/^"|"$/g,'').trim());
-      const nome=v[headers.indexOf('nome')]||v[1]||'';
-      if(!nome)continue;
-      const pl={
-        user_id:curUser.id,
-        codigo:v[headers.indexOf('codigo')]||v[0]||('MAT'+Date.now()+i),
-        nome,
-        categoria:v[headers.indexOf('categoria')]||v[2]||cats[0]||'Geral',
-        qtd:Number(v[headers.indexOf('quantidade')]||v[3])||0,
-        unidade:v[headers.indexOf('unidade')]||v[4]||'UN',
-        minimo:Number(v[headers.indexOf('minimo')]||v[5])||cfg.minimo||5,
-        valor:Number(v[headers.indexOf('valor unit.')]||v[6])||0,
-        local:v[headers.indexOf('localizacao')]||v[9]||'',
-        fornecedor:v[headers.indexOf('fornecedor')]||v[10]||'',
-        obs:''
-      };
-      const{data,error}=await sb.from('materiais').insert(pl).select().single();
-      if(!error&&data){mats.push(data);imp++;}else{err++;}
-    }
-    input.value='';
-    renderMat();renderDash();
-    showToast(`✅ ${imp} importados${err?', '+err+' erros':''}`);
-  };
-  reader.readAsText(file,'UTF-8');
-}
-
-// ── EXPORTS ──
-function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];const rows=[h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])];const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,'mtec_materiais.csv','text/csv;charset=utf-8;');showToast('✅ CSV exportado!');}
-async function dlArquivo(conteudo, nomeArquivo, mime){
-  const nomeFinal=nomeArquivo+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
-  // Capacitor (Android APK)
-  if(window.Capacitor&&window.Capacitor.isNativePlatform()){
-    try{
-      const{Filesystem,Directory}=await Promise.all([
-        import('@capacitor/filesystem').then(m=>m.Filesystem),
-        import('@capacitor/filesystem').then(m=>m.Directory)
-      ]);
-      // Converter para base64
-      const b64=btoa(unescape(encodeURIComponent(conteudo)));
-      await Filesystem.writeFile({path:nomeFinal,data:b64,directory:Directory.Documents,encoding:'base64'});
-      showToast('✅ Salvo em: Documentos/'+nomeFinal);
-    }catch(e){
-      // Fallback: abrir em nova aba para o usuário salvar manualmente
-      const blob=new Blob([conteudo],{type:mime});
-      const url=URL.createObjectURL(blob);
-      window.open(url,'_blank');
-      showToast('✅ Arquivo gerado — salve manualmente');
-    }
-    return;
-  }
-  // PC / Navegador normal
-  const b=new Blob(['\ufeff'+conteudo],{type:mime});
-  const url=URL.createObjectURL(b);
-  const a=document.createElement('a');
-  a.href=url;a.download=nomeFinal;
-  document.body.appendChild(a);a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
-}
-function dlCSV(data,fn){
-  const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  dlArquivo(csv,fn+'.csv','text/csv;charset=utf-8;');
-}
-function expJSON(){
-  dlArquivo(JSON.stringify({mats,movs,cfg,cats},null,2),'mtec_backup_'+Date.now()+'.json','application/json');
-  showToast('💾 Backup salvo!');
-}
-function prtInv(){
-  const empresa=cfg.empresa||'MTEC';
-  const catFil=document.getElementById('rf-cat-fil')?.value||'';
-  const allBase=getMatsVisiveis();
-  const base=catFil?allBase.filter(m=>m.categoria===catFil):allBase;
-  const usrLabel=adminMatUser?(allUsers.find(u=>u.id===adminMatUser)?.nome||''):'Todos';
-  const totVal=base.reduce((s,m)=>s+Number(m.qtd)*Number(m.valor),0);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${cfg.empresa||'MTEC'} - Inventário</title><style>${_pdfStyle()}</style></head><body>
-  ${_pdfCabecalho('Inventário Geral de Materiais')}
-    <div class="meta">
-      <div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
-      ${curUser.role==='admin'&&usrLabel?`<div>Usuário: ${usrLabel}</div>`:''}
-      <div>Total: ${base.length} itens${catFil?' · Categoria: '+catFil:''}</div>
-    </div>
-  </div>
-  <table>
-    <thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead>
-    <tbody>${base.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody>
-  </table>
-  <div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · ${new Date().toLocaleDateString('pt-BR')}</div>
-  
-  </body></html>`;
-  pdfAbrir(html,'📋 Inventário Geral');
+  const itens=mats.filter(m=>m.categoria===cat);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Categoria: '+cat)}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${itens.length} itens</div></div></div><table><thead><tr><th>Nome</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Localização</th><th>Status</th></tr></thead><tbody>${itens.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong>${m.obs?`<br><small>${m.obs}</small>`:''}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td>${m.local||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
+  pdfAbrir(html,'🏷️ Categoria: '+cat);
 }
 
 init();
