@@ -539,9 +539,8 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 <div id="pdf-panel" style="display:none;position:fixed;inset:0;z-index:2000;background:#fff;flex-direction:column">
   <div style="position:fixed;top:0;left:0;right:0;background:#1a1a1a;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:2010;min-height:56px">
     <span id="pdf-title" style="color:#aaa;font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <button onclick="pdfPrint()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🖨️ Imprimir</button>
-    <button onclick="pdfPrintFechar()" style="background:#005500;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🖨️ Impr+Fechar</button>
-    <button onclick="pdfFechar()" style="background:#cc3300;color:#fff;border:none;border-radius:6px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">✕ Fechar</button>
+    <button onclick="pdfSalvar()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">💾 Salvar PDF</button>
+    <button onclick="pdfFechar()" style="background:#cc3300;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">✕ Fechar</button>
   </div>
   <div style="height:56px;flex-shrink:0"></div>
   <iframe id="pdf-frame" style="flex:1;border:none;width:100%;background:#fff"></iframe>
@@ -1072,26 +1071,60 @@ function dlCSV(data,fn){const csv=data.map(r=>r.map(c=>`"${String(c||'').replace
 function expJSON(){dlArquivo(JSON.stringify({obra:curObra?.nome,mats,movs,cfg,cats},null,2),'mtec_backup_'+Date.now()+'.json','application/json');showToast('💾 Backup salvo!');}
 
 // ── PDF ──────────────────────────────────────────────
-function pdfAbrir(html,titulo){
-  const panel=document.getElementById('pdf-panel');
-  const frame=document.getElementById('pdf-frame');
-  document.getElementById('pdf-title').textContent=titulo;
-  panel.style.display='flex';
-  const doc=frame.contentDocument||frame.contentWindow.document;
-  doc.open();doc.write(html);doc.close();
+let _pdfHtmlAtual = '';
+let _pdfTituloAtual = '';
+
+function pdfAbrir(html, titulo){
+  _pdfHtmlAtual = html;
+  _pdfTituloAtual = titulo;
+  const panel = document.getElementById('pdf-panel');
+  const frame = document.getElementById('pdf-frame');
+  document.getElementById('pdf-title').textContent = titulo;
+  panel.style.display = 'flex';
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
 }
+
 function pdfFechar(){
-  document.getElementById('pdf-panel').style.display='none';
-  const frame=document.getElementById('pdf-frame');
-  const doc=frame.contentDocument||frame.contentWindow.document;
-  doc.open();doc.write('');doc.close();
+  document.getElementById('pdf-panel').style.display = 'none';
+  _pdfHtmlAtual = '';
+  _pdfTituloAtual = '';
+  const frame = document.getElementById('pdf-frame');
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open(); doc.write(''); doc.close();
 }
-function pdfPrint(){document.getElementById('pdf-frame').contentWindow.print();}
-function pdfPrintFechar(){
-  const frame=document.getElementById('pdf-frame');
-  frame.contentWindow.print();
-  // Fechar após o print dialog (pequeno delay para não cortar)
-  setTimeout(()=>pdfFechar(),500);
+
+async function pdfSalvar(){
+  if(!_pdfHtmlAtual){ showToast('⚠️ Nenhum relatório aberto.'); return; }
+  const titulo = _pdfTituloAtual.replace(/[^a-zA-Z0-9À-ú\s]/g,'').trim().replace(/\s+/g,'_') || 'relatorio';
+  const nomeArq = `MTEC_${titulo}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.html`;
+
+  // Android nativo via Capacitor Filesystem
+  if(window.Capacitor && window.Capacitor.isNativePlatform()){
+    try{
+      const { Filesystem, Directory } = await Promise.all([
+        import('@capacitor/filesystem').then(m => m.Filesystem),
+        import('@capacitor/filesystem').then(m => m.Directory)
+      ]);
+      const b64 = btoa(unescape(encodeURIComponent(_pdfHtmlAtual)));
+      await Filesystem.writeFile({ path: nomeArq, data: b64, directory: Directory.Documents, encoding: 'base64' });
+      showToast('✅ Salvo em Documentos: ' + nomeArq);
+      pdfFechar();
+      return;
+    }catch(e){ /* fallback abaixo */ }
+  }
+
+  // Navegador / fallback: baixar como arquivo .html (abre no Chrome → Compartilhar → Salvar PDF)
+  const blob = new Blob([_pdfHtmlAtual], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = nomeArq;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
+  showToast('✅ Arquivo baixado: ' + nomeArq);
+  pdfFechar();
 }
 
 function _pdfCabecalho(titulo){
