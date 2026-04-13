@@ -222,6 +222,9 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 .obra-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 </style>
+<!-- jsPDF: geração de PDF real no browser/WebView, sem plugin nativo -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -536,10 +539,10 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 </div>
 
 <!-- PAINEL RELATÓRIO FULLSCREEN -->
-<div id="pdf-panel" style="display:none;position:fixed;inset:0;z-index:2000;background:#fff;flex-direction:column">
+<div id="pdf-panel" style="display:none;position:fixed;inset:0;z-index:2000;background:#222;flex-direction:column">
   <div style="position:fixed;top:0;left:0;right:0;background:#1a1a1a;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:2010;min-height:56px">
     <span id="pdf-title" style="color:#aaa;font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <button onclick="pdfCompartilhar()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">📤 Compartilhar</button>
+    <button onclick="pdfCompartilhar()" id="btn-pdf-comp" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">📤 Compartilhar PDF</button>
     <button onclick="pdfFechar()" style="background:#cc3300;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">✕ Fechar</button>
   </div>
   <div style="height:56px;flex-shrink:0"></div>
@@ -859,10 +862,27 @@ async function delMat(id){
 }
 
 function prtMat(){
-  const q=(document.getElementById('b-mat')?.value||'').toLowerCase();const cat=document.getElementById('f-cat')?.value||'';
-  const fil=mats.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Relatório de Materiais')}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${fil.length} itens</div></div></div><table><thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead><tbody>${fil.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
-  pdfAbrir(html,'📄 Relatório de Materiais');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const q   = (document.getElementById('b-mat')?.value||'').toLowerCase();
+  const cat = document.getElementById('f-cat')?.value||'';
+  const fil = mats.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
+  const startY = _cabPDF(doc, 'Relatório de Materiais');
+  doc.setFontSize(8); doc.setTextColor(100,100,100);
+  doc.text(`Total: ${fil.length} itens`, 10, startY);
+  doc.setTextColor(0,0,0);
+  doc.autoTable({
+    startY: startY + 4,
+    head: [['Nome','Categoria','Qtd','Mín','Un','Fornecedor','Status']],
+    body: fil.map(m=>{ const s=gst(m); return [m.nome, m.categoria, m.qtd, m.minimo, m.unidade, m.fornecedor||'-', s.l]; }),
+    styles:{ fontSize:8, cellPadding:2 },
+    headStyles:{ fillColor:[0,170,51], textColor:255, fontStyle:'bold', fontSize:8 },
+    didParseCell(data){ if(data.section==='body'&&data.column.index===6){ const v=data.cell.text[0]; data.cell.styles.textColor=v==='OK'?[0,150,0]:v==='Baixo'?[200,120,0]:[200,0,0]; data.cell.styles.fontStyle='bold'; } },
+    alternateRowStyles:{ fillColor:[245,245,245] },
+    margin:{ left:10, right:10 }
+  });
+  _rodapePDF(doc);
+  pdfAbrir(doc, '📄 Relatório de Materiais');
 }
 
 // ── AUTOCOMPLETE ──────────────────────────────────────
@@ -1105,109 +1125,254 @@ function impCSV(input){
 
 // ── EXPORTS ──────────────────────────────────────────
 function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];const rows=[h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])];const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,'mtec_materiais.csv','text/csv;charset=utf-8;');showToast('✅ CSV exportado!');}
-async function dlArquivo(conteudo,nomeArquivo,mime){
-  const nomeFinal=nomeArquivo+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
-  // Android nativo: abrir blob como download via intent
-  if(window.Capacitor && window.Capacitor.isNativePlatform()){
-    const blob = new Blob([conteudo],{type:mime});
-    const url  = URL.createObjectURL(blob);
-    window.open(url,'_system');
-    setTimeout(()=>URL.revokeObjectURL(url), 2000);
-    showToast('✅ Arquivo gerado — escolha onde salvar');
+async function dlArquivo(conteudo, nomeArquivo, mime){
+  const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform();
+  const nomeFinal = nomeArquivo + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  if(isCapacitor){
+    // No Capacitor: converter para base64 data URI e abrir no Chrome externo (_system)
+    const b64 = btoa(unescape(encodeURIComponent(conteudo)));
+    const dataUri = 'data:' + mime + ';base64,' + b64;
+    window.open(dataUri, '_system');
+    showToast('✅ Abrindo arquivo...');
     return;
   }
-  const b=new Blob(['\ufeff'+conteudo],{type:mime});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=nomeFinal;document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+  // PC/navegador: download normal
+  const b = new Blob(['\ufeff'+conteudo],{type:mime});
+  const url = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href=url; a.download=nomeFinal;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
 }
 function dlCSV(data,fn){const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,fn+'.csv','text/csv;charset=utf-8;');}
 function expJSON(){dlArquivo(JSON.stringify({obra:curObra?.nome,mats,movs,cfg,cats},null,2),'mtec_backup_'+Date.now()+'.json','application/json');showToast('💾 Backup salvo!');}
 
 // ── PDF ──────────────────────────────────────────────
-let _pdfHtmlAtual = '';
+// ── PDF COM jsPDF ────────────────────────────────────
+// jsPDF e autotable carregados via CDN no <head>
+
+let _pdfDocAtual  = null;   // objeto jsPDF gerado
 let _pdfTituloAtual = '';
 
-function pdfAbrir(html, titulo){
-  _pdfHtmlAtual = html;
+// Cabeçalho padrão de todos os relatórios
+function _cabPDF(doc, titulo){
+  const empresa = cfg.empresa || 'MTEC';
+  const obra    = curObra?.nome || '';
+  const info    = [cfg.cnpj, cfg.endereco, cfg.telefone].filter(Boolean).join('  |  ');
+  const largura = doc.internal.pageSize.getWidth();
+
+  // Faixa verde
+  doc.setFillColor(0, 170, 51);
+  doc.rect(0, 0, largura, 28, 'F');
+
+  // Nome empresa
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(empresa, 10, 11);
+
+  // Título do relatório
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(titulo, 10, 18);
+  if(obra) doc.text('Obra: ' + obra, 10, 24);
+
+  // Data/hora à direita
+  doc.setFontSize(8);
+  doc.text('Emitido em: ' + new Date().toLocaleString('pt-BR'), largura - 10, 11, {align:'right'});
+  if(info) doc.text(info, largura - 10, 18, {align:'right'});
+
+  doc.setTextColor(0,0,0);
+  return 32; // y inicial para conteúdo
+}
+
+// Rodapé em todas as páginas
+function _rodapePDF(doc){
+  const total  = doc.internal.getNumberOfPages();
+  const largura= doc.internal.pageSize.getWidth();
+  const altura = doc.internal.pageSize.getHeight();
+  for(let i=1; i<=total; i++){
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(150,150,150);
+    doc.text(
+      `MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · Pág ${i}/${total}`,
+      largura/2, altura-5, {align:'center'}
+    );
+  }
+  doc.setTextColor(0,0,0);
+}
+
+// Abrir preview do PDF no iframe e guardar o doc
+function pdfAbrir(doc, titulo){
+  _pdfDocAtual    = doc;
   _pdfTituloAtual = titulo;
   document.getElementById('pdf-title').textContent = titulo;
   document.getElementById('pdf-panel').style.display = 'flex';
-  const frame = document.getElementById('pdf-frame');
-  const doc = frame.contentDocument || frame.contentWindow.document;
-  doc.open(); doc.write(html); doc.close();
+
+  // Preview: data URL no iframe
+  const dataUrl = doc.output('datauristring');
+  const frame   = document.getElementById('pdf-frame');
+  frame.src = dataUrl;
 }
 
 function pdfFechar(){
   document.getElementById('pdf-panel').style.display = 'none';
-  _pdfHtmlAtual = '';
-  const frame = document.getElementById('pdf-frame');
-  const doc = frame.contentDocument || frame.contentWindow.document;
-  doc.open(); doc.write(''); doc.close();
+  _pdfDocAtual = null;
+  document.getElementById('pdf-frame').src = 'about:blank';
 }
 
 async function pdfCompartilhar(){
-  if(!_pdfHtmlAtual){ showToast('⚠️ Nenhum relatório aberto.'); return; }
-
-  const titulo  = (_pdfTituloAtual||'relatorio').replace(/[^\w\sÀ-ú]/g,'').trim().replace(/\s+/g,'_');
-  const nomeArq = 'MTEC_' + titulo + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.html';
-
-  // ── Web Share API: funciona no Android WebView sem plugin ──
-  if(navigator.share && navigator.canShare){
-    try{
-      const blob = new Blob([_pdfHtmlAtual], { type: 'text/html;charset=utf-8' });
-      const file = new File([blob], nomeArq, { type: 'text/html' });
-      if(navigator.canShare({ files: [file] })){
-        await navigator.share({
-          title: _pdfTituloAtual,
-          text: 'Relatório MTEC Estoque — ' + (curObra?.nome||''),
-          files: [file]
-        });
-        return;
-      }
-    }catch(e){
-      if(e.name !== 'AbortError') showToast('⚠️ ' + e.message);
-      return;
-    }
+  if(!_pdfDocAtual){ showToast('⚠️ Nenhum relatório aberto.'); return; }
+  const btn = document.getElementById('btn-pdf-comp');
+  btn.disabled = true; btn.textContent = '⏳...';
+  try{
+    // data URI do PDF — Chrome/Android abre PDFs base64 direto com _system
+    const dataUri = _pdfDocAtual.output('datauristring');
+    window.open(dataUri, '_system');
+    // Fechar painel após abrir
+    setTimeout(()=> pdfFechar(), 800);
+  }catch(e){
+    showToast('⚠️ Erro: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '📤 Compartilhar PDF';
   }
-
-  // ── Fallback: baixar como arquivo (PC / navegador) ──
-  const blob = new Blob([_pdfHtmlAtual], { type: 'text/html;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = nomeArq;
-  document.body.appendChild(a); a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
-  showToast('✅ Baixado: ' + nomeArq);
 }
 
-function _pdfCabecalho(titulo){
-  const info=[cfg.cnpj,cfg.endereco,cfg.telefone].filter(Boolean).join(' | ');
-  return `<div class="hdr"><div><h1>🏭 ${cfg.empresa||'MTEC'}</h1>${info?`<div style="font-size:9px;color:#555;margin-top:2px">${info}</div>`:''}<div style="font-size:12px;font-weight:600;color:#333;margin-top:4px">${titulo}</div><div style="font-size:10px;color:#777;margin-top:2px">Obra: ${curObra?.nome||''}</div></div>`;
-}
-function _pdfStyle(){
-  return `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #00aa33}.hdr h1{font-size:18px;color:#00aa33;font-weight:800}.hdr .meta{text-align:right;font-size:10px;color:#666}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#00aa33;color:#fff;padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px}td{padding:6px 9px;border-bottom:1px solid #e8e8e8}tr:nth-child(even) td{background:#fafafa}.in{color:#0077cc;font-weight:700}.out{color:#cc3300;font-weight:700}.ok{color:#00aa33}.lo{color:#ff8c00}.ot{color:#ff4444}.ftr{margin-top:16px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px}@media print{@page{margin:15mm}}`;
+// ── GERAR RELATÓRIOS COM jsPDF ────────────────────────
+
+function prtMat(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const q   = (document.getElementById('b-mat')?.value||'').toLowerCase();
+  const cat = document.getElementById('f-cat')?.value||'';
+  const fil = mats.filter(m=>(!q||m.nome.toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q))&&(!cat||m.categoria===cat));
+
+  const startY = _cabPDF(doc, 'Relatório de Materiais');
+  doc.setFontSize(8); doc.setTextColor(100,100,100);
+  doc.text(`Total: ${fil.length} itens`, 10, startY);
+  doc.setTextColor(0,0,0);
+
+  doc.autoTable({
+    startY: startY + 4,
+    head: [['Nome','Categoria','Qtd','Mín','Un','Fornecedor','Status']],
+    body: fil.map(m=>{
+      const s = gst(m);
+      return [m.nome, m.categoria, m.qtd, m.minimo, m.unidade, m.fornecedor||'-', s.l];
+    }),
+    styles:{ fontSize:8, cellPadding:2 },
+    headStyles:{ fillColor:[0,170,51], textColor:255, fontStyle:'bold', fontSize:8 },
+    columnStyles:{ 2:{halign:'center'}, 3:{halign:'center'}, 4:{halign:'center'} },
+    didParseCell(data){
+      if(data.section==='body' && data.column.index===6){
+        const v = data.cell.text[0];
+        data.cell.styles.textColor = v==='OK'?[0,150,0]:v==='Baixo'?[200,120,0]:[200,0,0];
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+    alternateRowStyles:{ fillColor:[245,245,245] },
+    margin:{ left:10, right:10 }
+  });
+
+  _rodapePDF(doc);
+  pdfAbrir(doc, '📄 Relatório de Materiais');
 }
 
 function prtMov(tf){
-  const d=tf?movs.filter(m=>m.tipo===tf):getFilMov();
-  const tit=tf==='entrada'?'Entradas':tf==='saida'?'Saídas':'Movimentos';
-  const totE=d.filter(m=>m.tipo==='entrada').reduce((s,m)=>s+Number(m.qtd),0);
-  const totS=d.filter(m=>m.tipo==='saida').reduce((s,m)=>s+Number(m.qtd),0);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Relatório de '+tit)}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${d.length} registros${!tf?` | ▲ ${totE} entradas / ▼ ${totS} saídas`:''}</div></div></div><table><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Material</th><th>Qtd</th><th>Responsável</th><th>Observação</th><th>Saldo</th></tr></thead><tbody>${d.map(m=>`<tr><td>${fd(m.created_at)}</td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'▲ Entrada':'▼ Saída'}</td><td><strong>${m.material_nome||''}</strong></td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'+':'-'}${m.qtd}</td><td>${m.responsavel||'-'}</td><td>${m.obs||'-'}</td><td><strong>${m.saldo??'-'}</strong></td></tr>`).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
-  pdfAbrir(html,'📊 '+tit);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const d   = tf ? movs.filter(m=>m.tipo===tf) : getFilMov();
+  const tit = tf==='entrada'?'Relatório de Entradas' : tf==='saida'?'Relatório de Saídas' : 'Relatório de Movimentos';
+  const totE = d.filter(m=>m.tipo==='entrada').reduce((s,m)=>s+Number(m.qtd),0);
+  const totS = d.filter(m=>m.tipo==='saida').reduce((s,m)=>s+Number(m.qtd),0);
+
+  const startY = _cabPDF(doc, tit);
+  doc.setFontSize(8); doc.setTextColor(100,100,100);
+  doc.text(`Total: ${d.length} registros  |  ▲ Entradas: ${totE}  |  ▼ Saídas: ${totS}`, 10, startY);
+  doc.setTextColor(0,0,0);
+
+  doc.autoTable({
+    startY: startY + 4,
+    head: [['Data/Hora','Tipo','Material','Qtd','Responsável','Obs','Saldo']],
+    body: d.map(m=>[fd(m.created_at), m.tipo==='entrada'?'▲ Entrada':'▼ Saída', m.material_nome||'-', m.qtd, m.responsavel||'-', m.obs||'-', m.saldo??'-']),
+    styles:{ fontSize:8, cellPadding:2 },
+    headStyles:{ fillColor:[0,170,51], textColor:255, fontStyle:'bold', fontSize:8 },
+    didParseCell(data){
+      if(data.section==='body' && data.column.index===1){
+        data.cell.styles.textColor = data.cell.text[0].includes('Entrada')?[0,100,200]:[180,0,0];
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+    alternateRowStyles:{ fillColor:[245,245,245] },
+    margin:{ left:10, right:10 }
+  });
+
+  _rodapePDF(doc);
+  const icone = tf==='entrada'?'📥':tf==='saida'?'📤':'📊';
+  pdfAbrir(doc, icone+' '+tit);
 }
 
 function prtInv(){
-  const catFil=document.getElementById('rf-cat-fil')?.value||'';
-  const base=catFil?mats.filter(m=>m.categoria===catFil):mats;
-  const totVal=base.reduce((s,m)=>s+Number(m.qtd)*Number(m.valor),0);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Inventário Geral de Materiais')}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${base.length} itens${catFil?' · Cat: '+catFil:''} | Valor total: ${fm(totVal)}</div></div></div><table><thead><tr><th>Nome</th><th>Categoria</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Status</th></tr></thead><tbody>${base.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong></td><td>${m.categoria}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
-  pdfAbrir(html,'📋 Inventário Geral');
+  const { jsPDF } = window.jspdf;
+  const doc    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const catFil = document.getElementById('rf-cat-fil')?.value||'';
+  const base   = catFil ? mats.filter(m=>m.categoria===catFil) : mats;
+  const totVal = base.reduce((s,m)=>s+Number(m.qtd)*Number(m.valor),0);
+
+  const startY = _cabPDF(doc, 'Inventário Geral de Materiais');
+  doc.setFontSize(8); doc.setTextColor(100,100,100);
+  doc.text(`Total: ${base.length} itens${catFil?' · Cat: '+catFil:''} · Valor total: ${fm(totVal)}`, 10, startY);
+  doc.setTextColor(0,0,0);
+
+  doc.autoTable({
+    startY: startY + 4,
+    head: [['Nome','Categoria','Qtd','Mín','Un','Fornecedor','Status']],
+    body: base.map(m=>{ const s=gst(m); return [m.nome, m.categoria, m.qtd, m.minimo, m.unidade, m.fornecedor||'-', s.l]; }),
+    styles:{ fontSize:8, cellPadding:2 },
+    headStyles:{ fillColor:[0,170,51], textColor:255, fontStyle:'bold', fontSize:8 },
+    didParseCell(data){
+      if(data.section==='body' && data.column.index===6){
+        const v=data.cell.text[0];
+        data.cell.styles.textColor=v==='OK'?[0,150,0]:v==='Baixo'?[200,120,0]:[200,0,0];
+        data.cell.styles.fontStyle='bold';
+      }
+    },
+    alternateRowStyles:{ fillColor:[245,245,245] },
+    margin:{ left:10, right:10 }
+  });
+
+  _rodapePDF(doc);
+  pdfAbrir(doc, '📋 Inventário Geral');
 }
 
 function prtCatIndividual(cat){
-  const itens=mats.filter(m=>m.categoria===cat);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${_pdfStyle()}</style></head><body>${_pdfCabecalho('Categoria: '+cat)}<div class="meta"><div>Emitido em: ${new Date().toLocaleString('pt-BR')}</div><div>Total: ${itens.length} itens</div></div></div><table><thead><tr><th>Nome</th><th>Qtd Atual</th><th>Qtd Mínima</th><th>Un</th><th>Fornecedor</th><th>Localização</th><th>Status</th></tr></thead><tbody>${itens.map(m=>{const s=gst(m);const cl=s.l==='OK'?'ok':s.l==='Baixo'?'lo':'ot';return`<tr><td><strong>${m.nome}</strong>${m.obs?`<br><small>${m.obs}</small>`:''}</td><td class="${cl}">${m.qtd}</td><td>${m.minimo}</td><td>${m.unidade}</td><td>${m.fornecedor||'-'}</td><td>${m.local||'-'}</td><td class="${cl}">${s.l}</td></tr>`;}).join('')}</tbody></table><div class="ftr">MTEC Estoque · ${cfg.empresa||'MTEC'} · Obra: ${curObra?.nome||''} · ${new Date().toLocaleDateString('pt-BR')}</div></body></html>`;
-  pdfAbrir(html,'🏷️ Categoria: '+cat);
+  const { jsPDF } = window.jspdf;
+  const doc   = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const itens = mats.filter(m=>m.categoria===cat);
+
+  const startY = _cabPDF(doc, 'Categoria: ' + cat);
+  doc.setFontSize(8); doc.setTextColor(100,100,100);
+  doc.text(`Total: ${itens.length} itens`, 10, startY);
+  doc.setTextColor(0,0,0);
+
+  doc.autoTable({
+    startY: startY + 4,
+    head: [['Nome','Qtd','Mín','Un','Fornecedor','Localização','Status']],
+    body: itens.map(m=>{ const s=gst(m); return [m.nome, m.qtd, m.minimo, m.unidade, m.fornecedor||'-', m.local||'-', s.l]; }),
+    styles:{ fontSize:8, cellPadding:2 },
+    headStyles:{ fillColor:[0,170,51], textColor:255, fontStyle:'bold', fontSize:8 },
+    didParseCell(data){
+      if(data.section==='body' && data.column.index===6){
+        const v=data.cell.text[0];
+        data.cell.styles.textColor=v==='OK'?[0,150,0]:v==='Baixo'?[200,120,0]:[200,0,0];
+        data.cell.styles.fontStyle='bold';
+      }
+    },
+    alternateRowStyles:{ fillColor:[245,245,245] },
+    margin:{ left:10, right:10 }
+  });
+
+  _rodapePDF(doc);
+  pdfAbrir(doc, '🏷️ Categoria: ' + cat);
 }
+
 
 init();
 </script>
