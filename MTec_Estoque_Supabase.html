@@ -1107,9 +1107,14 @@ function impCSV(input){
 function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];const rows=[h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])];const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,'mtec_materiais.csv','text/csv;charset=utf-8;');showToast('✅ CSV exportado!');}
 async function dlArquivo(conteudo,nomeArquivo,mime){
   const nomeFinal=nomeArquivo+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
-  if(window.Capacitor&&window.Capacitor.isNativePlatform()){
-    try{const{Filesystem,Directory}=await Promise.all([import('@capacitor/filesystem').then(m=>m.Filesystem),import('@capacitor/filesystem').then(m=>m.Directory)]);const b64=btoa(unescape(encodeURIComponent(conteudo)));await Filesystem.writeFile({path:nomeFinal,data:b64,directory:Directory.Documents,encoding:'base64'});showToast('✅ Salvo em: Documentos/'+nomeFinal);return;}catch(e){}
-    const blob=new Blob([conteudo],{type:mime});const url=URL.createObjectURL(blob);window.open(url,'_blank');showToast('✅ Arquivo gerado — salve manualmente');return;
+  // Android nativo: abrir blob como download via intent
+  if(window.Capacitor && window.Capacitor.isNativePlatform()){
+    const blob = new Blob([conteudo],{type:mime});
+    const url  = URL.createObjectURL(blob);
+    window.open(url,'_system');
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    showToast('✅ Arquivo gerado — escolha onde salvar');
+    return;
   }
   const b=new Blob(['\ufeff'+conteudo],{type:mime});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=nomeFinal;document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
 }
@@ -1144,37 +1149,26 @@ async function pdfCompartilhar(){
   const titulo  = (_pdfTituloAtual||'relatorio').replace(/[^\w\sÀ-ú]/g,'').trim().replace(/\s+/g,'_');
   const nomeArq = 'MTEC_' + titulo + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.html';
 
-  // ── APK Android: salvar no cache e compartilhar via Intent ──
-  if(window.Capacitor && window.Capacitor.isNativePlatform()){
+  // ── Web Share API: funciona no Android WebView sem plugin ──
+  if(navigator.share && navigator.canShare){
     try{
-      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-        import('@capacitor/filesystem'),
-        import('@capacitor/share')
-      ]);
-      // Gravar arquivo no cache do app
-      await Filesystem.writeFile({
-        path: nomeArq,
-        data: btoa(unescape(encodeURIComponent(_pdfHtmlAtual))),
-        directory: Directory.Cache,
-        encoding: 'base64'
-      });
-      // Obter URI compatível com FileProvider
-      const { uri } = await Filesystem.getUri({ path: nomeArq, directory: Directory.Cache });
-      // Disparar seletor de apps nativo do Android
-      await Share.share({
-        title: _pdfTituloAtual,
-        text: 'Relatório MTEC Estoque — ' + (curObra?.nome||''),
-        url: uri,
-        dialogTitle: 'Compartilhar relatório'
-      });
-      return;
+      const blob = new Blob([_pdfHtmlAtual], { type: 'text/html;charset=utf-8' });
+      const file = new File([blob], nomeArq, { type: 'text/html' });
+      if(navigator.canShare({ files: [file] })){
+        await navigator.share({
+          title: _pdfTituloAtual,
+          text: 'Relatório MTEC Estoque — ' + (curObra?.nome||''),
+          files: [file]
+        });
+        return;
+      }
     }catch(e){
-      showToast('⚠️ Erro no compartilhamento nativo: ' + e.message);
+      if(e.name !== 'AbortError') showToast('⚠️ ' + e.message);
       return;
     }
   }
 
-  // ── Navegador / PC: baixar como arquivo .html ──
+  // ── Fallback: baixar como arquivo (PC / navegador) ──
   const blob = new Blob([_pdfHtmlAtual], { type: 'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
