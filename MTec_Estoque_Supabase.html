@@ -539,7 +539,7 @@ input::placeholder,textarea::placeholder{color:var(--mt)}
 <div id="pdf-panel" style="display:none;position:fixed;inset:0;z-index:2000;background:#fff;flex-direction:column">
   <div style="position:fixed;top:0;left:0;right:0;background:#1a1a1a;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:2010;min-height:56px">
     <span id="pdf-title" style="color:#aaa;font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <button onclick="pdfSalvar()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">💾 Salvar PDF</button>
+    <button onclick="pdfCompartilhar()" style="background:#00aa33;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">📤 Compartilhar</button>
     <button onclick="pdfFechar()" style="background:#cc3300;color:#fff;border:none;border-radius:6px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">✕ Fechar</button>
   </div>
   <div style="height:56px;flex-shrink:0"></div>
@@ -574,6 +574,27 @@ document.addEventListener('backbutton',function(e){
 async function init(){
   const ls=document.getElementById('ls');
   ls.style.display='flex'; setMsg('Iniciando...');
+
+  // ── CACHE: abrir instantaneamente com dados salvos localmente ──
+  try{
+    const cObra  = localStorage.getItem('mtec_obra_cache');
+    const cMats  = localStorage.getItem('mtec_mats_cache');
+    if(cObra && cMats){
+      curObra  = JSON.parse(cObra);
+      mats     = JSON.parse(cMats);
+      movs     = JSON.parse(localStorage.getItem('mtec_movs_cache') ||'[]');
+      allObras = JSON.parse(localStorage.getItem('mtec_obras_cache')||JSON.stringify([curObra]));
+      const cc = localStorage.getItem('mtec_cats_cache');
+      if(cc){ allCats=JSON.parse(cc); cats=allCats[curObra.id]||cats; }
+      const cf = localStorage.getItem('mtec_cfg_cache');
+      if(cf) cfg=JSON.parse(cf);
+      showApp();          // mostra na hora com cache
+      setMsg('Atualizando dados...');
+      // Continua em background para atualizar
+    }
+  }catch(e){ curObra=null; }
+
+  // ── SINCRONIZAR com Supabase ──
   try{
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
     const{data,error}=await Promise.race([
@@ -581,20 +602,21 @@ async function init(){
       timeout
     ]);
     if(error&&(error.code==='42P01'||error.message?.includes('relation'))){
-      ls.style.display='none';
-      showSetupErr('Execute o setup_supabase.sql no Supabase primeiro.');
-      document.getElementById('setup').classList.add('show'); return;
+      if(!curObra){ ls.style.display='none'; showSetupErr('Execute o setup_supabase.sql no Supabase primeiro.'); document.getElementById('setup').classList.add('show'); }
+      else{ hideLs(); showToast('⚠️ Banco não encontrado — exibindo cache.'); }
+      return;
     }
     allObras=data||[];
   }catch(e){
-    ls.style.display='none';
-    showSetupErr('Sem conexão. Verifique sua internet e recarregue.');
-    document.getElementById('setup').classList.add('show'); return;
+    if(!curObra){ ls.style.display='none'; showSetupErr('Sem conexão. Verifique sua internet.'); document.getElementById('setup').classList.add('show'); }
+    else{ hideLs(); showToast('📶 Sem conexão — exibindo cache.'); }
+    return;
   }
+
   if(!allObras.length){
-    ls.style.display='none';
-    document.getElementById('setup').classList.add('show'); return;
+    ls.style.display='none'; document.getElementById('setup').classList.add('show'); return;
   }
+
   // Carregar empresa global
   const{data:ed}=await sb.from('configuracoes').select('valor').eq('obra_id',0).eq('chave','empresa').maybeSingle();
   if(ed)try{const c=JSON.parse(ed.valor);cfg={...cfg,...c};}catch(e){}
@@ -603,9 +625,31 @@ async function init(){
   const savedId=localStorage.getItem('mtec_obra_id');
   if(savedId){
     const o=allObras.find(x=>String(x.id)===savedId);
-    if(o){curObra=o;setMsg('Carregando '+o.nome+'...');try{await loadData();showApp();return;}catch(e){localStorage.removeItem('mtec_obra_id');}}
+    if(o){
+      curObra=o; setMsg('Atualizando '+o.nome+'...');
+      try{
+        await loadData();
+        // Salvar cache atualizado
+        salvarCache();
+        showApp(); return;
+      }catch(e){ localStorage.removeItem('mtec_obra_id'); }
+    }
   }
-  ls.style.display='none'; mostrarSelecaoObra();
+  // Sem obra salva — se tinha cache já está mostrando, senão selecionar obra
+  if(!curObra){ ls.style.display='none'; mostrarSelecaoObra(); }
+  else hideLs();
+}
+
+// ── SALVAR CACHE LOCAL ────────────────────────────────
+function salvarCache(){
+  try{
+    localStorage.setItem('mtec_obra_cache',  JSON.stringify(curObra));
+    localStorage.setItem('mtec_mats_cache',  JSON.stringify(mats));
+    localStorage.setItem('mtec_movs_cache',  JSON.stringify(movs));
+    localStorage.setItem('mtec_obras_cache', JSON.stringify(allObras));
+    localStorage.setItem('mtec_cats_cache',  JSON.stringify(allCats));
+    localStorage.setItem('mtec_cfg_cache',   JSON.stringify(cfg));
+  }catch(e){}
 }
 
 // ── SETUP ────────────────────────────────────────────
@@ -651,7 +695,7 @@ async function entrarObra(id){
   curObra=o;localStorage.setItem('mtec_obra_id',String(id));
   document.getElementById('obra-sel').classList.remove('show');
   document.getElementById('ls').style.display='flex';setMsg('Carregando '+o.nome+'...');
-  try{await loadData();showApp();}
+  try{await loadData();showApp();}  // loadData já chama salvarCache()
   catch(e){document.getElementById('ls').style.display='none';mostrarSelecaoObra();showToast('❌ Erro: '+e.message);}
 }
 
@@ -687,6 +731,8 @@ async function loadData(){
   if(cr.data)cr.data.forEach(r=>{
     if(r.chave==='config')try{cfg={...cfg,...JSON.parse(r.valor)};}catch(e){}
   });
+  // Atualizar cache após carregar
+  salvarCache();
 }
 
 // ── SHOW APP ─────────────────────────────────────────
@@ -1077,10 +1123,9 @@ let _pdfTituloAtual = '';
 function pdfAbrir(html, titulo){
   _pdfHtmlAtual = html;
   _pdfTituloAtual = titulo;
-  const panel = document.getElementById('pdf-panel');
-  const frame = document.getElementById('pdf-frame');
   document.getElementById('pdf-title').textContent = titulo;
-  panel.style.display = 'flex';
+  document.getElementById('pdf-panel').style.display = 'flex';
+  const frame = document.getElementById('pdf-frame');
   const doc = frame.contentDocument || frame.contentWindow.document;
   doc.open(); doc.write(html); doc.close();
 }
@@ -1088,43 +1133,55 @@ function pdfAbrir(html, titulo){
 function pdfFechar(){
   document.getElementById('pdf-panel').style.display = 'none';
   _pdfHtmlAtual = '';
-  _pdfTituloAtual = '';
   const frame = document.getElementById('pdf-frame');
   const doc = frame.contentDocument || frame.contentWindow.document;
   doc.open(); doc.write(''); doc.close();
 }
 
-async function pdfSalvar(){
+async function pdfCompartilhar(){
   if(!_pdfHtmlAtual){ showToast('⚠️ Nenhum relatório aberto.'); return; }
-  const titulo = _pdfTituloAtual.replace(/[^a-zA-Z0-9À-ú\s]/g,'').trim().replace(/\s+/g,'_') || 'relatorio';
-  const nomeArq = `MTEC_${titulo}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.html`;
 
-  // Android nativo via Capacitor Filesystem
+  const titulo  = (_pdfTituloAtual||'relatorio').replace(/[^\w\sÀ-ú]/g,'').trim().replace(/\s+/g,'_');
+  const nomeArq = 'MTEC_' + titulo + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.html';
+
+  // ── APK Android: salvar no cache e compartilhar via Intent ──
   if(window.Capacitor && window.Capacitor.isNativePlatform()){
     try{
-      const { Filesystem, Directory } = await Promise.all([
-        import('@capacitor/filesystem').then(m => m.Filesystem),
-        import('@capacitor/filesystem').then(m => m.Directory)
+      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+        import('@capacitor/filesystem'),
+        import('@capacitor/share')
       ]);
-      const b64 = btoa(unescape(encodeURIComponent(_pdfHtmlAtual)));
-      await Filesystem.writeFile({ path: nomeArq, data: b64, directory: Directory.Documents, encoding: 'base64' });
-      showToast('✅ Salvo em Documentos: ' + nomeArq);
-      pdfFechar();
+      // Gravar arquivo no cache do app
+      await Filesystem.writeFile({
+        path: nomeArq,
+        data: btoa(unescape(encodeURIComponent(_pdfHtmlAtual))),
+        directory: Directory.Cache,
+        encoding: 'base64'
+      });
+      // Obter URI compatível com FileProvider
+      const { uri } = await Filesystem.getUri({ path: nomeArq, directory: Directory.Cache });
+      // Disparar seletor de apps nativo do Android
+      await Share.share({
+        title: _pdfTituloAtual,
+        text: 'Relatório MTEC Estoque — ' + (curObra?.nome||''),
+        url: uri,
+        dialogTitle: 'Compartilhar relatório'
+      });
       return;
-    }catch(e){ /* fallback abaixo */ }
+    }catch(e){
+      showToast('⚠️ Erro no compartilhamento nativo: ' + e.message);
+      return;
+    }
   }
 
-  // Navegador / fallback: baixar como arquivo .html (abre no Chrome → Compartilhar → Salvar PDF)
+  // ── Navegador / PC: baixar como arquivo .html ──
   const blob = new Blob([_pdfHtmlAtual], { type: 'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href     = url;
-  a.download = nomeArq;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
-  showToast('✅ Arquivo baixado: ' + nomeArq);
-  pdfFechar();
+  a.href = url; a.download = nomeArq;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+  showToast('✅ Baixado: ' + nomeArq);
 }
 
 function _pdfCabecalho(titulo){
