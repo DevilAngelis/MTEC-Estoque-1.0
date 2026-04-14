@@ -22,39 +22,37 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      # Instala dependências
+      # SEM --ignore-scripts: garante postinstall dos plugins Capacitor
       - name: Instalar dependencias
-        run: npm install --legacy-peer-deps --ignore-scripts
+        run: npm install --legacy-peer-deps
 
-      # CRÍTICO: gera www/index.html antes do cap sync
-      # Sem este passo o APK abre tela branca
       - name: Preparar www
         run: node copy-web.js
 
       - name: Verificar www/index.html
         run: |
-          if [ ! -f "www/index.html" ]; then
-            echo "ERRO: www/index.html nao foi gerado"
-            exit 1
-          fi
-          echo "OK: www/index.html - $(wc -c < www/index.html) bytes"
+          if [ ! -f "www/index.html" ]; then echo "ERRO: www/index.html nao gerado"; exit 1; fi
+          echo "OK: $(wc -c < www/index.html) bytes"
 
+      # cap sync registra @capacitor/filesystem e @capacitor/share no Android
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Verificar plugins registrados
+        run: |
+          cat android/app/capacitor.build.gradle
+          cat android/capacitor.settings.gradle
 
       - name: Permissao gradlew
         run: chmod +x android/gradlew
 
-      # Keystore vem do secret KEYSTORE_BASE64
-      # O build.gradle lê KEYSTORE_PASSWORD, KEY_ALIAS e KEY_PASSWORD via System.getenv()
-      # Fallback hardcoded no build.gradle: mtec1234 / mtec
       - name: Criar keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/mtec-release.keystore
 
       - name: local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Build APK
+      - name: Build APK Release
         run: cd android && ./gradlew assembleRelease
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -64,11 +62,8 @@ jobs:
       - name: Verificar APK
         run: |
           APK="android/app/build/outputs/apk/release/app-release.apk"
-          if [ ! -f "$APK" ]; then
-            echo "ERRO: APK nao encontrado"
-            exit 1
-          fi
-          echo "OK: APK gerado - $(du -h $APK | cut -f1)"
+          if [ ! -f "$APK" ]; then echo "ERRO: APK nao encontrado"; exit 1; fi
+          echo "OK: APK $(du -h $APK | cut -f1)"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

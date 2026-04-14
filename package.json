@@ -10,8 +10,7 @@
     "build:web": "node copy-web.js",
     "cap:sync": "npx cap sync android",
     "cap:add:android": "npx cap add android",
-    "apk:debug": "npm run build:web && npm run cap:sync && cd android && (if exist gradlew.bat (gradlew.bat assembleDebug) else (./gradlew assembleDebug)) && cd ..",
-    "apk": "npm run apk:debug"
+    "apk": "npm run build:web && npm run cap:sync"
   },
   "build": {
     "appId": "com.mtec.estoque",
@@ -73,8 +72,8 @@
   "dependencies": {
     "@capacitor/android": "^6.0.0",
     "@capacitor/core": "^6.0.0",
-    "electron-updater": "^6.1.8",
+    "@capacitor/filesystem": "^6.0.0",
     "@capacitor/share": "^6.0.0",
-    "@capacitor/filesystem": "^6.0.0"
+    "electron-updater": "^6.1.8"
   }
 }

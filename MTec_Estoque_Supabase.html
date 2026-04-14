@@ -1126,24 +1126,21 @@ function impCSV(input){
 // ── EXPORTS ──────────────────────────────────────────
 function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];const rows=[h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])];const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,'mtec_materiais.csv','text/csv;charset=utf-8;');showToast('✅ CSV exportado!');}
 async function dlArquivo(conteudo, nomeArquivo, mime){
-  const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform();
   const nomeFinal = nomeArquivo + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
-  if(isCapacitor){
-    // No Capacitor: converter para base64 data URI e abrir no Chrome externo (_system)
-    const b64 = btoa(unescape(encodeURIComponent(conteudo)));
-    const dataUri = 'data:' + mime + ';base64,' + b64;
-    window.open(dataUri, '_system');
-    showToast('✅ Abrindo arquivo...');
-    return;
-  }
-  // PC/navegador: download normal
-  const b = new Blob(['\ufeff'+conteudo],{type:mime});
+  // Converter texto para base64
+  const b64 = btoa(unescape(encodeURIComponent(conteudo)));
+  // Tentar via plugin nativo
+  const ok = await _nativeShare(nomeFinal, b64, nomeFinal);
+  if(ok) return;
+  // Fallback PC/navegador
+  const b = new Blob(['﻿'+conteudo],{type:mime});
   const url = URL.createObjectURL(b);
   const a = document.createElement('a');
   a.href=url; a.download=nomeFinal;
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
 }
+
 function dlCSV(data,fn){const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,fn+'.csv','text/csv;charset=utf-8;');}
 function expJSON(){dlArquivo(JSON.stringify({obra:curObra?.nome,mats,movs,cfg,cats},null,2),'mtec_backup_'+Date.now()+'.json','application/json');showToast('💾 Backup salvo!');}
 
@@ -1219,22 +1216,72 @@ function pdfFechar(){
   document.getElementById('pdf-frame').src = 'about:blank';
 }
 
+
+// ── ACESSO AOS PLUGINS CAPACITOR (filesystem + share) ──────────────────────
+// Funciona quando @capacitor/filesystem e @capacitor/share estão no package.json
+// e o APK foi construído com `npx cap sync android`
+function _capFS(){ return window.Capacitor?.Plugins?.Filesystem || null; }
+function _capSH(){ return window.Capacitor?.Plugins?.Share      || null; }
+
+// Converte ArrayBuffer para base64 (para PDFs binários)
+function _ab2b64(ab){
+  const bytes = new Uint8Array(ab);
+  let bin = '';
+  // Processar em chunks para evitar stack overflow em arquivos grandes
+  const CHUNK = 8192;
+  for(let i = 0; i < bytes.length; i += CHUNK){
+    bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
+}
+
+// Compartilhar/salvar qualquer arquivo via Capacitor Filesystem + Share
+async function _nativeShare(nomeArq, dataB64, titulo){
+  const FS = _capFS(), SH = _capSH();
+  if(!FS || !SH) return false;
+  try{
+    // 1. Gravar no cache do app
+    await FS.writeFile({ path: nomeArq, data: dataB64, directory: 'CACHE' });
+    // 2. Obter URI nativo (content://)
+    const { uri } = await FS.getUri({ path: nomeArq, directory: 'CACHE' });
+    // 3. Abrir seletor de apps do Android
+    await SH.share({ title: titulo, url: uri, dialogTitle: 'Compartilhar ' + titulo });
+    return true;
+  }catch(e){
+    console.error('_nativeShare error:', e);
+    showToast('⚠️ Erro nativo: ' + e.message);
+    return false;
+  }
+}
+
 async function pdfCompartilhar(){
   if(!_pdfDocAtual){ showToast('⚠️ Nenhum relatório aberto.'); return; }
   const btn = document.getElementById('btn-pdf-comp');
   btn.disabled = true; btn.textContent = '⏳...';
   try{
-    // data URI do PDF — Chrome/Android abre PDFs base64 direto com _system
-    const dataUri = _pdfDocAtual.output('datauristring');
-    window.open(dataUri, '_system');
-    // Fechar painel após abrir
-    setTimeout(()=> pdfFechar(), 800);
+    const titulo  = (_pdfTituloAtual||'Relatorio').replace(/[^\w\sÀ-ú]/g,'').trim().replace(/\s+/g,'_');
+    const nomeArq = 'MTEC_' + titulo + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf';
+    // Gerar PDF como ArrayBuffer → base64
+    const b64 = _ab2b64(_pdfDocAtual.output('arraybuffer'));
+    // Tentar via plugin nativo
+    const ok = await _nativeShare(nomeArq, b64, 'PDF');
+    if(ok){ pdfFechar(); return; }
+    // Fallback PC/navegador: download blob
+    const blob = _pdfDocAtual.output('blob');
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = nomeArq;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+    showToast('✅ PDF baixado: ' + nomeArq);
+    pdfFechar();
   }catch(e){
     showToast('⚠️ Erro: ' + e.message);
   }finally{
     btn.disabled = false; btn.textContent = '📤 Compartilhar PDF';
   }
 }
+
 
 // ── GERAR RELATÓRIOS COM jsPDF ────────────────────────
 
