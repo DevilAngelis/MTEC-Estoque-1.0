@@ -1126,10 +1126,16 @@ function impCSV(input){
 // ── EXPORTS ──────────────────────────────────────────
 function expCSV(){const h=['Codigo','Nome','Categoria','Quantidade','Unidade','Minimo','Valor Unit.','Valor Total','Status','Localizacao','Fornecedor'];const rows=[h,...mats.map(m=>[m.codigo,m.nome,m.categoria,m.qtd,m.unidade,m.minimo,Number(m.valor).toFixed(2),(Number(m.qtd)*Number(m.valor)).toFixed(2),gst(m).l,m.local,m.fornecedor])];const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');dlArquivo(csv,'mtec_materiais.csv','text/csv;charset=utf-8;');showToast('✅ CSV exportado!');}
 async function dlArquivo(conteudo, nomeArquivo, mime){
-  const nomeFinal = nomeArquivo + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  // Separar nome e extensão para inserir a data antes da extensão
+  const dot   = nomeArquivo.lastIndexOf('.');
+  const base  = dot > 0 ? nomeArquivo.slice(0, dot) : nomeArquivo;
+  const ext   = dot > 0 ? nomeArquivo.slice(dot)    : '';
+  const data  = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  const nomeFinal = base + '_' + data + ext;   // ex: mtec_materiais_14-04-2026.csv
+
   // Converter texto para base64
   const b64 = btoa(unescape(encodeURIComponent(conteudo)));
-  // Tentar via plugin nativo
+  // Tentar via plugin nativo (Android)
   const ok = await _nativeShare(nomeFinal, b64, nomeFinal);
   if(ok) return;
   // Fallback PC/navegador
